@@ -64,53 +64,54 @@ def build_BE(self, BE_parm_vec, AO_rate, SS_step_t, chirp_direction = 0):
       BE_band = np.fft.fftshift(np.fft.fft(A))
 
     elif self.BE_parms['BE_wave_type'] == "sinc":
-        N = int(np.log2(BE_ppw))
-        t_max = SS_step_t
-        IO_rate = 2**N / t_max
-        bw = w2 - w1
+        NotImplementedError ("sinc BE wave not implemented yet")
+        # N = int(np.log2(BE_ppw))
+        # t_max = SS_step_t
+        # IO_rate = 2**N / t_max
+        # bw = w2 - w1
 
-        w_vec = np.arange(-IO_rate/2, IO_rate/2 + IO_rate/(2**N-1), IO_rate/(2**N-1))
-        f_resolution = 1 / t_max
-        bin_ind_1 = round(2**(N-1) + w1 / f_resolution)
-        bin_ind_2 = round(2**(N-1) + w2 / f_resolution)
-        bin_ind = np.arange(bin_ind_1, bin_ind_2 + 1)
+        # w_vec = np.arange(-IO_rate/2, IO_rate/2 + IO_rate/(2**N-1), IO_rate/(2**N-1))
+        # f_resolution = 1 / t_max
+        # bin_ind_1 = round(2**(N-1) + w1 / f_resolution)
+        # bin_ind_2 = round(2**(N-1) + w2 / f_resolution)
+        # bin_ind = np.arange(bin_ind_1, bin_ind_2 + 1)
         
-        points_per_band = bw * t_max
-        f_rate = bw / t_max
+        # points_per_band = bw * t_max
+        # f_rate = bw / t_max
 
-        x1 = np.arange(0, 1, 1 / (len(bin_ind) - 1))
+        # x1 = np.arange(0, 1, 1 / (len(bin_ind) - 1))
 
-        Yp_chirp1 = -1 * ((x1) ** 2) * bw * np.pi * t_max * 1
-        Yp1 = -1 * ((x1) ** 2) * bw * np.pi * t_max * BE_phase_var
-        sigma = BE_smoothing
-        a = erf((w_vec - w1 - 2 * sigma) / sigma)
-        b = erf((w_vec - w2 + 2 * sigma) / sigma)
-        Ya = np.sqrt(2 ** N * IO_rate / bw) * 1 / 2 * (a - b)
-        Yp = np.zeros_like(Ya)
-        Yp[bin_ind] = Yp1
-        Yp_chirp = np.zeros_like(Ya)
-        Yp_chirp[bin_ind] = Yp_chirp1
+        # Yp_chirp1 = -1 * ((x1) ** 2) * bw * np.pi * t_max * 1
+        # Yp1 = -1 * ((x1) ** 2) * bw * np.pi * t_max * BE_phase_var
+        # sigma = BE_smoothing
+        # a = erf((w_vec - w1 - 2 * sigma) / sigma)
+        # b = erf((w_vec - w2 + 2 * sigma) / sigma)
+        # Ya = np.sqrt(2 ** N * IO_rate / bw) * 1 / 2 * (a - b)
+        # Yp = np.zeros_like(Ya)
+        # Yp[bin_ind] = Yp1
+        # Yp_chirp = np.zeros_like(Ya)
+        # Yp_chirp[bin_ind] = Yp_chirp1
 
-        Y = Ya * np.exp(1j * Yp)
-        Y_chirp = Ya * np.exp(1j * Yp_chirp)
+        # Y = Ya * np.exp(1j * Yp)
+        # Y_chirp = Ya * np.exp(1j * Yp_chirp)
 
-        A = np.real(np.fft.ifft(np.fft.fftshift(Y)))
-        A = np.roll(A, round((2**N) * (1 - BE_phase_var) / 2))
+        # A = np.real(np.fft.ifft(np.fft.fftshift(Y)))
+        # A = np.roll(A, round((2**N) * (1 - BE_phase_var) / 2))
 
-        B = np.real(np.fft.ifft(np.fft.fftshift(Y_chirp)))
+        # B = np.real(np.fft.ifft(np.fft.fftshift(Y_chirp)))
 
-        if 1:
-            cut_fraction = (BE_rep - 1) / (2 * BE_rep)
-            keep = slice(int(BE_ppw * cut_fraction) + 1, int(BE_ppw * (1 - cut_fraction)))
-            A = A[keep]
-            for k in range(int(np.log2(BE_rep))):
-                A = np.concatenate((A, A))
+        # if 1:
+        #     cut_fraction = (BE_rep - 1) / (2 * BE_rep)
+        #     keep = slice(int(BE_ppw * cut_fraction) + 1, int(BE_ppw * (1 - cut_fraction)))
+        #     A = A[keep]
+        #     for k in range(int(np.log2(BE_rep))):
+        #         A = np.concatenate((A, A))
 
-        BE_wave = A / max(A)
-        BE_band = np.fft.fftshift(np.fft.fft(A))
+        # BE_wave = A / max(A)
+        # BE_band = np.fft.fftshift(np.fft.fft(A))
 
-        BE_wave_chirp = B / max(B)
-        BE_band_chirp = np.fft.fftshift(np.fft.fft(B))
+        # BE_wave_chirp = B / max(B)
+        # BE_band_chirp = np.fft.fftshift(np.fft.fft(B))
 
 
     # Return the results (modify accordingly)
