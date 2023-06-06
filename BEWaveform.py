@@ -128,9 +128,153 @@ class BEWaveform:
         sph1b = plt.subplot(3, 2, 2)
         sph1b.tick_params(axis='both', which='both', labelsize=7)
         plt.plot(w_vec_full, np.abs(BE_band))
+
+    def plot_SS_wave(fig_num, SS_wave, AO_rate, SS_read_vec, SS_write_vec):
+        fh = plt.figure(fig_num)
+        t_vec = np.arange(len(SS_wave)) / AO_rate
+       
+        plt.plot(t_vec, SS_wave)
+
+        ph1 = plt.plot(t_vec[SS_read_vec], SS_wave[SS_read_vec], 'ro')
+        ph2 = plt.plot(t_vec[SS_write_vec], SS_wave[SS_write_vec], 'go')
+        plt.setp(ph1, markersize=1.5, markerfacecolor=[1, 0, 0])
+        plt.setp(ph2, markersize=1.5, markerfacecolor=[0, 1, 0])
+        fh.set_facecolor([1, 1, 1])
         
         fh.set_facecolor([1, 1, 1])
+
+    def build_SS(self, chirp_direction = 0, **kwargs):
+        BE_ppw = 2**self.BE_parms_1["BE_ppw"]
+
+        n_read_final = BE_ppw  # points per read step actual
+        if self.assembly_parm_vec["num_band_ring"] == 1:  # excite two bands
+            if self.assembly_parm_vec["par_ser_ring"] == 1:  # excite them in series
+                n_read_final = 2 * BE_ppw  # then double the width
+        AO_rate, SS_step_t = self.determine_AO_rate(BE_ppw)
+        AO_length = AO_rate * SS_step_t
+
+        n_read = 256  # points per read reduced in order to speed up calculation
+
+        SS_smooth = AO_rate * self.SS_parm_vec["SS_smoothing"]  # smoothing factor
+        n_trans = round(SS_smooth * 5)
+        # read_delay = 3; %ensures that the reading starts(stops) after(before) smoothing
+
+        n_pfm = n_read_final  # AO_rate*SS_step_t*2;
+        n_setpulse = AO_rate * self.SS_parm_vec["SS_set_pulse_t"]
+
+        if self.assembly_parm_vec["meas_high_ring"] == 0:
+            n_write = int(n_read / self.SS_parm_vec["SS_RW_ratio"])  # points per write
+        if self.assembly_parm_vec["meas_high_ring"] == 1:
+            n_write = n_read
+        
+
+        if self.SS_parm_vec["SS_mode_ring"] == 0:
+
+            n_write = n_write + n_trans
+            n_cycle = (n_read + n_trans + n_write) * self.SS_parm_vec["SS_steps_per_cycle"]  # points per cycle
+            interp_factor = n_read_final / n_read
+
+            n_step = n_write + n_trans + n_read  # data points per steps
+            n_write_vec = np.arange(n_read, n_cycle // 4, n_step)  # vector indices when writing starts
+            n_read_vec = n_write_vec + n_write  # vector of indices when writing stops
+
+            dc_amp_vec_1 = np.arange(self.SS_parm_vec["SS_max_offset_amp"] / ( self.SS_parm_vec["SS_steps_per_cycle"] / 4),self.SS_parm_vec["SS_max_offset_amp"] + 1e-10,
+                                    self.SS_parm_vec["SS_max_offset_amp"] / ( self.SS_parm_vec["SS_steps_per_cycle"] / 4))  # vector of offset values for first quarter wave
+            dc_amp_vec_2 = np.arange( self.SS_parm_vec["SS_max_offset_amp"]  - self.SS_parm_vec["SS_max_offset_amp"] /( self.SS_parm_vec["SS_steps_per_cycle"]/4), 
+                                     - self.SS_parm_vec["SS_max_offset_amp"] /( self.SS_parm_vec["SS_steps_per_cycle"]/4), - self.SS_parm_vec["SS_max_offset_amp"] /( self.SS_parm_vec["SS_steps_per_cycle"]/4)) # vector of offset values for second quarter wave
+            dc_amp_vec_3 = -dc_amp_vec_1
+            dc_amp_vec_4 = -dc_amp_vec_2
+            dc_amp_vec_1 = dc_amp_vec_1 - self.SS_parm_vec["SS_read_voltage"]
+            dc_amp_vec_2 = dc_amp_vec_2 - self.SS_parm_vec["SS_read_voltage"]
+            dc_amp_vec_3 = dc_amp_vec_3 - self.SS_parm_vec["SS_read_voltage"]
+            dc_amp_vec_4 = dc_amp_vec_4 - self.SS_parm_vec["SS_read_voltage"]
+
+            plt.figure(55)
+            plt.clf()
+            plt.plot(dc_amp_vec_1, 'b.-')
+            plt.plot(dc_amp_vec_2, 'r.-')
+            plt.plot(dc_amp_vec_3, 'k.-')
+            plt.plot(dc_amp_vec_4, 'g.-')
+
+            # build quarter waves
+            n_sub = np.arange(1, n_cycle // 4 )
+            y1 = np.zeros_like(n_sub)
+            y2 = np.zeros_like(n_sub)
+            y3 = np.zeros_like(n_sub)
+            y4 = np.zeros_like(n_sub)
+        
+            for step_count in range((self.SS_parm_vec["SS_steps_per_cycle"]//4)):
+                yk1 = dc_amp_vec_1[step_count] * 0.5 * (
+                    erf((n_sub - n_write_vec[step_count]) / SS_smooth) - erf((n_sub - n_read_vec[step_count]) / SS_smooth))
+                
+                yk2 = dc_amp_vec_2[step_count] * 0.5 * (
+                    erf((n_sub - n_write_vec[step_count]) / SS_smooth) - erf((n_sub - n_read_vec[step_count]) / SS_smooth))
+                
+                yk3 = dc_amp_vec_3[step_count] * 0.5 * (
+                    erf((n_sub - n_write_vec[step_count]) / SS_smooth) - erf((n_sub - n_read_vec[step_count]) / SS_smooth))
+                yk4 = dc_amp_vec_4[step_count] * 0.5 * (
+                    erf((n_sub - n_write_vec[step_count]) / SS_smooth) - erf((n_sub - n_read_vec[step_count]) / SS_smooth))
+
+                y1 = y1 + yk1
+                y2 = y2 + yk2
+                y3 = y3 + yk3
+                y4 = y4 + yk4
+
+            # combine quarter waves to build full cycle
+            n = np.arange(n_cycle-4 ) #fix
+            y = np.concatenate((y1, y2, y3, y4))
+            dc_amp_vec_single = np.concatenate(
+                (dc_amp_vec_1, dc_amp_vec_2, dc_amp_vec_3, dc_amp_vec_4))
+            # interpolate wave and read/write indices to achieve desired number of points per read step
+            ni = np.arange(1, int(n_cycle * interp_factor) + 1) / interp_factor
+            yi = np.interp(ni, n, y)  # offset output wave
+
+            ni *= interp_factor
+            n_write_vec = np.concatenate(
+                (np.arange(n_read, n_cycle // 2, n_step),
+                n_cycle // 2 + np.arange(n_read, n_cycle // 2 - n_read - 1, -n_step)))
+            n_read_vec = np.concatenate(([1 / interp_factor], n_write_vec + n_write))
+            ni_read_vec = n_read_vec * interp_factor  # vector of indices for reading
+            ni_write_vec = n_write_vec * interp_factor  # vector of indices for writing
+            ni_read_vec = ni_read_vec[:-1]
+            ni_write_vec = ni_write_vec[:-1]
+
+            # repeat full cycle
+            yi0 = yi.copy()
+            ni_write_vec0 = ni_write_vec.copy()
+            ni_read_vec0 = ni_read_vec.copy()
+            dc_amp_vec_full = dc_amp_vec_single.copy()
+
+            for k in range(self.SS_parm_vec["SS_num_loops"] - 1):
+                yi = np.concatenate((yi, yi0))
+                ly = len(yi) - len(yi0)
+                final_read = ni_read_vec[-1]
+                ni_write_vec = np.concatenate(
+                    (ni_write_vec, [final_read + n_read * interp_factor], ni_write_vec0 + ly))
+                ni_read_vec = np.concatenate((ni_read_vec, ni_read_vec0 + ly))
+                dc_amp_vec_full = np.concatenate((dc_amp_vec_full, dc_amp_vec_single))
             
+            n_sp = np.arange(1, n_setpulse + 2 * n_trans + 1)
+            y_sp = 0.5 * self.SS_parm_vec["SS_set_pulse_amp"] * (erf((n_sp - n_trans * interp_factor) / (SS_smooth * interp_factor))
+                                            - erf((n_sp - n_setpulse + n_trans * interp_factor) / (SS_smooth * interp_factor)))
+
+            # Add PFM read and setpulse
+            ni = np.arange(1, len(ni) * self.SS_parm_vec["SS_num_loops"] + n_pfm + n_setpulse + 1)
+            yi = np.concatenate((np.zeros(n_pfm), y_sp, yi))
+            ni_read_vec = ni_read_vec + n_pfm + n_setpulse
+            ni_write_vec = ni_write_vec + n_pfm + n_setpulse
+            SS_read_vec = np.round(ni_read_vec + np.round(n_trans * interp_factor / 2))
+            SS_write_vec = np.round(ni_write_vec + np.round(n_trans * interp_factor / 2))
+            SS_write_vec = np.concatenate((SS_write_vec, [SS_write_vec[-1] + np.round(n_step * interp_factor)]))
+            SS_read_vec[0] = np.round(ni_read_vec[0]) - interp_factor * n_trans / 2
+            SS_wave = yi + self.SS_parm_vec["SS_read_voltage"]
+            dc_amp_vec_full = dc_amp_vec_full + self.SS_parm_vec["SS_read_voltage"]
+            SS_wave_nan = np.where(np.isnan(SS_wave))[0]
+            SS_wave[SS_wave_nan] = 0
+            SS_parm_out = np.arange(2, 12)
+            
+        return SS_wave,SS_read_vec,SS_write_vec,SS_parm_out
+
     def BEPS_wave_build(self,plot_cond_vec = 1, num_band_ring = 1,**kwargs):
         BE_ppw = 2**self.BE_parms_1["BE_ppw"]
         BE_rep = 2**self.BE_parms_1["BE_rep"]
@@ -165,33 +309,15 @@ class BEWaveform:
             F_BE_wave_2 = F_BE_wave_2[:len(F_BE_wave_2)//2]
             if plot_cond_vec == 1:
                 BEWaveform.plot_BE_wave(2, BE_wave_2, BE_band_2, w_ind_band_2, w_vec_full, SS_step_t)
-        '''
+        
         # Build SS waveform
-        SS_wave,SS_read_vec,SS_write_vec,SS_parm_out = build_SS(assembly_parm_vec,BE_parm_vec_1,SS_parm_vec)
+        SS_wave,SS_read_vec,SS_write_vec,SS_parm_out = BEWaveform.build_SS(self)
         if 0:
-            plot_SS_wave(3,SS_wave,AO_rate,SS_read_vec,SS_write_vec)
+            BEWaveform.plot_SS_wave(3,SS_wave,AO_rate,SS_read_vec,SS_write_vec)
                 
         
 
 
                     
 
-    def build_SS(self, chirp_direction = 0, **kwargs):
-        BE_ppw = 2**self.BE_parms_1["BE_ppw"]
-
-        n_read_final = BE_ppw  # points per read step actual
-        if self.assembly_parm_vec["num_band_ring"] == 1:  # excite two bands
-            if self.assembly_parm_vec["par_ser_ring"] == 1:  # excite them in series
-                n_read_final = 2 * BE_ppw  # then double the width
-        AO_rate, SS_step_t = self.determine_AO_rate(BE_ppw)
-        AO_length = AO_rate * SS_step_t
-
-        n_read = 256  # points per read reduced in order to speed up calculation
-
-        SS_smooth = AO_rate * self.SS_parm_vec["SS_smoothing"]  # smoothing factor
-        n_trans = round(SS_smooth * 5)
-        # read_delay = 3; %ensures that the reading starts(stops) after(before) smoothing
-
-        n_pfm = n_read_final  # AO_rate*SS_step_t*2;
-        n_setpulse = AO_rate * SS_set_pulse_t
-        '''
+    
