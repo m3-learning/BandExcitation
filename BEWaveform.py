@@ -32,13 +32,6 @@ class BEWaveform:
         return AO_rate, SS_step_t
     
     def build_BE(self, chirp_direction = 0, **kwargs):
-        # BE_wave_type = BE_parm_vec[0]
-        # self.BE_parms['BE_w_center'] = BE_parm_vec[1]
-        # self.BE_parms['BE_w_width'] = BE_parm_vec[2]
-        # BE_amp = BE_parm_vec[3]
-        # BE_smoothing = BE_parm_vec[4]
-        # BE_phase_var = BE_parm_vec[5]
-        # BE_window_adj = BE_parm_vec[6]
         BE_ppw = 2**self.BE_parms_1["BE_ppw"]
         BE_rep = 2**self.BE_parms_1["BE_rep"]
         AO_rate, SS_step_t = self.determine_AO_rate(BE_ppw)
@@ -121,7 +114,8 @@ class BEWaveform:
             
         # Return the results (modify accordingly)
         return BE_wave, BE_band
-    
+
+
     def plot_BE_wave(fig_num,BE_wave, BE_band, w_ind_band, w_vec_full, SS_step_t):
         fh = plt.figure(fig_num)
 
@@ -167,10 +161,34 @@ class BEWaveform:
             BE_wave_2 = BE_wave_2 * self.BE_parms_2["BE_amp"]
             F_BE_wave_2 = np.fft.fftshift(np.fft.fft(BE_wave_2))
             F_BE_wave_2 = F_BE_wave_2[:len(F_BE_wave_2)//2]
-            if plot_cond_vec[0] == 1:
+            if plot_cond_vec == 1:
                 BEWaveform.plot_BE_wave(2, BE_wave_2, BE_band_2, w_ind_band_2, w_vec_full, SS_step_t)
-            
-      
-
-
+        
+        # Build SS waveform
+        SS_wave,SS_read_vec,SS_write_vec,SS_parm_out = build_SS(assembly_parm_vec,BE_parm_vec_1,SS_parm_vec)
+        if 0:
+            plot_SS_wave(3,SS_wave,AO_rate,SS_read_vec,SS_write_vec)
                 
+        
+
+
+                    
+
+    def build_SS(self, chirp_direction = 0, **kwargs):
+        BE_ppw = 2**self.BE_parms_1["BE_ppw"]
+
+        n_read_final = BE_ppw  # points per read step actual
+        if self.assembly_parm_vec["num_band_ring"] == 1:  # excite two bands
+            if self.assembly_parm_vec["par_ser_ring"] == 1:  # excite them in series
+                n_read_final = 2 * BE_ppw  # then double the width
+        AO_rate, SS_step_t = self.determine_AO_rate(BE_ppw)
+        AO_length = AO_rate * SS_step_t
+
+        n_read = 256  # points per read reduced in order to speed up calculation
+
+        SS_smooth = AO_rate * self.SS_parm_vec["SS_smoothing"]  # smoothing factor
+        n_trans = round(SS_smooth * 5)
+        # read_delay = 3; %ensures that the reading starts(stops) after(before) smoothing
+
+        n_pfm = n_read_final  # AO_rate*SS_step_t*2;
+        n_setpulse = AO_rate * SS_set_pulse_t
