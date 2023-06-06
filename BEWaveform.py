@@ -103,7 +103,7 @@ class BEWaveform:
 
             if 1:
                 cut_fraction = (BE_rep - 1) / (2 * BE_rep)
-                keep = slice(int(BE_ppw * cut_fraction) + 1, int(BE_ppw * (1 - cut_fraction)))
+                keep = slice(int(BE_ppw * cut_fraction), int(BE_ppw * (1 - cut_fraction)))
                 A = A[keep]
                 for k in range(int(np.log2(BE_rep))):
                     A = np.concatenate((A, A))
@@ -139,7 +139,7 @@ class BEWaveform:
         AO_rate, SS_step_t = self.determine_AO_rate(BE_ppw)
         AO_length = AO_rate * SS_step_t
 
-        w_vec_full = np.arange(-AO_rate/2, AO_rate/2 , AO_rate/(AO_length-1))
+        w_vec_full = np.arange(-AO_rate/2, AO_rate/2 + AO_rate/(AO_length-1) , AO_rate/(AO_length-1))
         w1_1 = self.BE_parms_1["BE_w_center"] - self.BE_parms_1["BE_w_width"]/2
         w2_1 = self.BE_parms_1["BE_w_center"] + self.BE_parms_1["BE_w_width"]/2
         w1_2 = self.BE_parms_2["BE_w_center"] - self.BE_parms_2["BE_w_width"]/2
