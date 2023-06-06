@@ -165,7 +165,7 @@ class BEWaveform:
             F_BE_wave_2 = F_BE_wave_2[:len(F_BE_wave_2)//2]
             if plot_cond_vec == 1:
                 BEWaveform.plot_BE_wave(2, BE_wave_2, BE_band_2, w_ind_band_2, w_vec_full, SS_step_t)
-        
+        '''
         # Build SS waveform
         SS_wave,SS_read_vec,SS_write_vec,SS_parm_out = build_SS(assembly_parm_vec,BE_parm_vec_1,SS_parm_vec)
         if 0:
@@ -194,3 +194,4 @@ class BEWaveform:
 
         n_pfm = n_read_final  # AO_rate*SS_step_t*2;
         n_setpulse = AO_rate * SS_set_pulse_t
+        '''
