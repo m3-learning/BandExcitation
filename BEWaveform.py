@@ -4,9 +4,11 @@ import matplotlib.pyplot as plt
 
 class BEWaveform:
     
-    def __init__(self, BE_parms_1,BE_parms_2, DAQ_platform = "PXI-5412") -> None:
+    def __init__(self, BE_parms_1,BE_parms_2, SS_parm_vec, assembly_parm_vec, DAQ_platform = "PXI-5412") -> None:
         self.BE_parms_1 = BE_parms_1
         self.BE_parms_2 = BE_parms_2
+        self.SS_parm_vec = SS_parm_vec
+        self.assembly_parm_vec = assembly_parm_vec
         self.DAQ_platform = DAQ_platform
         
     def determine_AO_rate(self, BE_ppw, function_generator_freq = 0.01):
