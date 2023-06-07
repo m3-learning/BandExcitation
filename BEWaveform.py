@@ -135,8 +135,10 @@ class BEWaveform:
        
         plt.plot(t_vec, SS_wave)
 
-        ph1 = plt.plot(t_vec[SS_read_vec], SS_wave[SS_read_vec], 'ro')
-        ph2 = plt.plot(t_vec[SS_write_vec], SS_wave[SS_write_vec], 'go')
+        #ph1 = plt.plot(t_vec[SS_read_vec], SS_wave[SS_read_vec], 'ro')
+        #ph2 = plt.plot(t_vec[SS_write_vec], SS_wave[SS_write_vec], 'go')
+        ph1 = plt.plot(t_vec[np.array(SS_read_vec, dtype=int)], SS_wave[np.array(SS_read_vec, dtype=int)], 'ro')
+        ph2 = plt.plot(t_vec[np.array(SS_write_vec, dtype=int)], SS_wave[np.array(SS_write_vec, dtype=int)], 'go')
         plt.setp(ph1, markersize=1.5, markerfacecolor=[1, 0, 0])
         plt.setp(ph2, markersize=1.5, markerfacecolor=[0, 1, 0])
         fh.set_facecolor([1, 1, 1])    
