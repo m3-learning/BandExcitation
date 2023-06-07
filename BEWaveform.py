@@ -134,15 +134,13 @@ class BEWaveform:
         t_vec = np.arange(len(SS_wave)) / AO_rate
        
         plt.plot(t_vec, SS_wave)
-        plt.title("SS_wave")
 
         ph1 = plt.plot(t_vec[SS_read_vec], SS_wave[SS_read_vec], 'ro')
         ph2 = plt.plot(t_vec[SS_write_vec], SS_wave[SS_write_vec], 'go')
         plt.setp(ph1, markersize=1.5, markerfacecolor=[1, 0, 0])
         plt.setp(ph2, markersize=1.5, markerfacecolor=[0, 1, 0])
-        fh.set_facecolor([1, 1, 1])
-        
-        fh.set_facecolor([1, 1, 1])
+        fh.set_facecolor([1, 1, 1])    
+        plt.title("SS_wave")
 
     def build_SS(self, chirp_direction = 0, **kwargs):
         BE_ppw = 2**self.BE_parms_1["BE_ppw"]
