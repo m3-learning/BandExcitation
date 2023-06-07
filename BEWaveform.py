@@ -134,6 +134,7 @@ class BEWaveform:
         t_vec = np.arange(len(SS_wave)) / AO_rate
        
         plt.plot(t_vec, SS_wave)
+        plt.title("SS_wave")
 
         ph1 = plt.plot(t_vec[SS_read_vec], SS_wave[SS_read_vec], 'ro')
         ph2 = plt.plot(t_vec[SS_write_vec], SS_wave[SS_write_vec], 'go')
