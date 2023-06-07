@@ -313,7 +313,8 @@ class BEWaveform:
         
         # Build SS waveform
         SS_wave,SS_read_vec,SS_write_vec,SS_parm_out = BEWaveform.build_SS(self)
-        if 0:
+        #if 0:
+        if plot_cond_vec== 1:
             BEWaveform.plot_SS_wave(3,SS_wave,AO_rate,SS_read_vec,SS_write_vec)
                 
         
