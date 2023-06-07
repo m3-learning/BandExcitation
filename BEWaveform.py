@@ -303,7 +303,7 @@ class BEWaveform:
             BEWaveform.plot_BE_wave(1,BE_wave_1, BE_band_1, w_ind_band_1, w_vec_full, SS_step_t)
 
         if num_band_ring == 1:
-            BE_wave_2, BE_band_2 = BEWaveform.build_BE(self)
+            BE_wave_2, BE_band_2 = BEWaveform.build_BE(self,self.BE_parms_2)
             BE_wave_2 = BE_wave_2 * self.BE_parms_2["BE_amp"]
             F_BE_wave_2 = np.fft.fftshift(np.fft.fft(BE_wave_2))
             F_BE_wave_2 = F_BE_wave_2[:len(F_BE_wave_2)//2]
