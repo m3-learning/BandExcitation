@@ -33,9 +33,9 @@ class BEWaveform:
 
         return AO_rate, SS_step_t
     
-    def build_BE(self, chirp_direction = 0, **kwargs):
-        BE_ppw = 2**self.BE_parms_1["BE_ppw"]
-        BE_rep = 2**self.BE_parms_1["BE_rep"]
+    def build_BE(self, BE_parms,chirp_direction = 0, **kwargs):
+        BE_ppw = 2**BE_parms["BE_ppw"]
+        BE_rep = 2**BE_parms["BE_rep"]
         AO_rate, SS_step_t = self.determine_AO_rate(BE_ppw)
 
         w1 = self.BE_parms_1['BE_w_center'] - self.BE_parms_1['BE_w_width']/2
@@ -292,7 +292,7 @@ class BEWaveform:
         w_ind_band_2 = np.where((w_vec_full >= w1_2) & (w_vec_full <= w2_2))[0]
 
 
-        BE_wave_1, BE_band_1 = BEWaveform.build_BE(self)
+        BE_wave_1, BE_band_1 = BEWaveform.build_BE(self,self.BE_parms_1)
         
         BE_wave_1 = BE_wave_1 * self.BE_parms_1["BE_amp"]
         F_BE_wave_1 = np.fft.fftshift(np.fft.fft(BE_wave_1))
