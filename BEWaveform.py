@@ -2,6 +2,7 @@ import numpy as np
 from scipy.special import erf
 import matplotlib.pyplot as plt
 
+
 class BEWaveform:
     
     def __init__(self, BE_parms_1,BE_parms_2, SS_parm_vec, assembly_parm_vec, DAQ_platform = "PXI-5412") -> None:
@@ -141,7 +142,8 @@ class BEWaveform:
         ph2 = plt.plot(t_vec[np.array(SS_write_vec, dtype=int)], SS_wave[np.array(SS_write_vec, dtype=int)], 'go')
         plt.setp(ph1, markersize=1.5, markerfacecolor=[1, 0, 0])
         plt.setp(ph2, markersize=1.5, markerfacecolor=[0, 1, 0])
-        fh.set_facecolor([1, 1, 1])    
+        fh.set_facecolor([1, 1, 1]) 
+        #plt.xlim([0,1])   
         plt.title("SS_wave")
 
     def build_SS(self, chirp_direction = 0, **kwargs):
@@ -169,7 +171,7 @@ class BEWaveform:
             n_write = n_read
         
 
-        if self.SS_parm_vec["SS_mode_ring"] == 0:
+        if self.SS_parm_vec["SS_mode_ring"] == "standard_spectrum":
 
             n_write = n_write + n_trans
             n_cycle = (n_read + n_trans + n_write) * self.SS_parm_vec["SS_steps_per_cycle"]  # points per cycle
@@ -273,6 +275,7 @@ class BEWaveform:
             SS_wave_nan = np.where(np.isnan(SS_wave))[0]
             SS_wave[SS_wave_nan] = 0
             SS_parm_out = np.arange(2, 12)
+
             
         return SS_wave,SS_read_vec,SS_write_vec,SS_parm_out
 
@@ -316,6 +319,7 @@ class BEWaveform:
         #if 0:
         if plot_cond_vec== 1:
             BEWaveform.plot_SS_wave(3,SS_wave,AO_rate,SS_read_vec,SS_write_vec)
+        print("loop back mm")
                 
         
 
