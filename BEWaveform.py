@@ -38,16 +38,16 @@ class BEWaveform:
         BE_rep = 2**BE_parms["BE_rep"]
         AO_rate, SS_step_t = self.determine_AO_rate(BE_ppw)
 
-        w1 = self.BE_parms_1['BE_w_center'] - self.BE_parms_1['BE_w_width']/2
-        w2 = self.BE_parms_1['BE_w_center'] + self.BE_parms_1['BE_w_width']/2
+        w1 = BE_parms['BE_w_center'] - BE_parms['BE_w_width']/2
+        w2 = BE_parms['BE_w_center'] + BE_parms['BE_w_width']/2
 
-        if self.BE_parms_1['BE_wave_type'] == "chirp":
+        if BE_parms['BE_wave_type'] == "chirp":
             
             chirp_t = SS_step_t / BE_rep
             t = np.arange(0, chirp_t, 1 / (AO_rate - 1))  # time vector
             m = (w2 - w1) / chirp_t / 2  # slope of frequency change
             w_chirp = m * t + w1  # vector for linear frequency change with time
-            chirp_smoothing = 4 * chirp_t * self.BE_parms_1["BE_smoothing"] / 1E4  # smoothing factor for error function
+            chirp_smoothing = 4 * chirp_t * BE_parms["BE_smoothing"] / 1E4  # smoothing factor for error function
             envelope_a = (1 + erf((t - chirp_smoothing * 2) / chirp_smoothing)) / 2  # first half of erf window
             envelope_b = (1 + erf((t + chirp_smoothing * 2 - chirp_t) / chirp_smoothing)) / 2  # second half of erf window
             envelope = envelope_a - envelope_b  # erf window
@@ -62,7 +62,7 @@ class BEWaveform:
                 BE_wave = A
             BE_band = np.fft.fftshift(np.fft.fft(A))
 
-        elif self.BE_parms_1['BE_wave_type'] == "sinc":
+        elif BE_parms['BE_wave_type'] == "sinc":
             BE_wave = None
             BE_band = None
             #NotImplementedError ()
@@ -83,8 +83,8 @@ class BEWaveform:
             x1 = np.arange(0, 1, 1 / (len(bin_ind) - 1))
 
             Yp_chirp1 = -1 * ((x1) ** 2) * bw * np.pi * t_max * 1
-            Yp1 = -1 * ((x1) ** 2) * bw * np.pi * t_max * self.BE_parms_1["BE_phase_var"]
-            sigma = self.BE_parms_1["BE_smoothing"]
+            Yp1 = -1 * ((x1) ** 2) * bw * np.pi * t_max * BE_parms["BE_phase_var"]
+            sigma = BE_parms["BE_smoothing"]
             a = erf((w_vec - w1 - 2 * sigma) / sigma)
             b = erf((w_vec - w2 + 2 * sigma) / sigma)
             Ya = np.sqrt(2 ** N * IO_rate / bw) * 1 / 2 * (a - b)
@@ -97,7 +97,7 @@ class BEWaveform:
             Y_chirp = Ya * np.exp(1j * Yp_chirp)
 
             A = np.real(np.fft.ifft(np.fft.fftshift(Y)))
-            A = np.roll(A, round((2**N) * (1 -self.BE_parms_1["BE_phase_var"]) / 2))
+            A = np.roll(A, round((2**N) * (1 -BE_parms["BE_phase_var"]) / 2))
 
             B = np.real(np.fft.ifft(np.fft.fftshift(Y_chirp)))
 
