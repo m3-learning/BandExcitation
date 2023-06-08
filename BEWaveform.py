@@ -278,6 +278,57 @@ class BEWaveform:
 
             
         return SS_wave,SS_read_vec,SS_write_vec,SS_parm_out
+    def merge_BE_SS(self,BE_wave_1,BE_wave_2,SS_wave,SS_read_vec,SS_write_vec):
+   
+        if self.assembly_parm_vec['num_band_ring'] == 0:  # excite one band
+            BE_wave = BE_wave_1
+
+        if self.assembly_parm_vec['num_band_ring'] == 1:  # excite two bands
+            if self.assembly_parm_vec['par_ser_ring'] == 0:  # parallel combination
+                BE_wave = BE_wave_1 + BE_wave_2
+            if self.assembly_parm_vec['par_ser_ring'] == 1:  # parallel combination
+                BE_wave = np.concatenate((BE_wave_1, BE_wave_2))
+
+        n_step = len(BE_wave)
+        if self.SS_parm_vec["SS_mode_ring"] == "standard_spectrum":
+            BEPS_wave = SS_wave
+            BEPS_wave_dc = SS_wave
+            BEPS_wave_ac = np.zeros_like(SS_wave)
+            BEPS_wave[:n_step] += BE_wave
+            '''
+            for step_count in range(len(SS_read_vec)):
+            print(step_count)
+            BEPS_wave[int(SS_read_vec[step_count]):int(SS_read_vec[step_count])+n_step-1] += BE_wave
+            print(BEPS_wave)
+            BEPS_wave_ac[int(SS_read_vec[step_count]):int(SS_read_vec[step_count])+n_step-1] = BE_wave
+            print(BEPS_wave,'ac')
+            '''
+            for step_count in range(len(SS_read_vec)):
+                start_idx = int(SS_read_vec[step_count])
+                end_idx = int(SS_read_vec[step_count]) + n_step - 1
+                BEPS_wave[start_idx:end_idx] += BE_wave[:n_step-1]
+                BEPS_wave_ac[start_idx:end_idx] = BE_wave[:n_step-1]
+                
+            if self.assembly_parm_vec['meas_high_ring'] == 1:
+                '''
+                for step_count in range(len(SS_write_vec)):
+                BEPS_wave[SS_write_vec[step_count]:SS_write_vec[step_count]+n_step-1] += BE_wave
+                BEPS_wave_ac[SS_write_vec[step_count]:SS_write_vec[step_count]+n_step-1] = BE_wave
+                '''
+                for step_count in range(len(SS_write_vec)):
+                    start_idx = int(SS_write_vec[step_count])
+                    end_idx = int(SS_write_vec[step_count]) + n_step - 1
+                    BEPS_wave[start_idx:end_idx] += BE_wave[:n_step-1]
+                    BEPS_wave_ac[start_idx:end_idx] = BE_wave[:n_step-1]
+        ly = len(BEPS_wave)
+        if ly % 4 == 1:
+            BEPS_wave = BEPS_wave[:-1]
+        elif ly % 4 == 2:
+            BEPS_wave = BEPS_wave[:-2]
+        elif ly % 4 == 3:
+            BEPS_wave = BEPS_wave[:-3]
+
+        return BEPS_wave, BEPS_wave_ac, BEPS_wave_dc
 
     def BEPS_wave_build(self,plot_cond_vec = 1, num_band_ring = 1,**kwargs):
         BE_ppw = 2**self.BE_parms_1["BE_ppw"]
