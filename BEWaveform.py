@@ -64,9 +64,6 @@ class BEWaveform:
             BE_band = np.fft.fftshift(np.fft.fft(A))
 
         elif BE_parms['BE_wave_type'] == "sinc":
-            BE_wave = None
-            BE_band = None
-            #NotImplementedError ()
             N = int(np.log2(BE_ppw))
             t_max = SS_step_t
             IO_rate = 2**N / t_max
@@ -78,8 +75,8 @@ class BEWaveform:
             bin_ind_2 = round(2**(N-1) + w2 / f_resolution)
             bin_ind = np.arange(bin_ind_1, bin_ind_2 + 1)
            
-            points_per_band = bw * t_max
-            f_rate = bw / t_max
+            #points_per_band = bw * t_max
+            #f_rate = bw / t_max
 
             x1 = np.arange(0, 1, 1 / (len(bin_ind) - 1))
 
@@ -118,8 +115,8 @@ class BEWaveform:
         # Return the results (modify accordingly)
         return BE_wave, BE_band
 
-
-    def plot_BE_wave(fig_num,BE_wave, BE_band, w_ind_band, w_vec_full, SS_step_t):
+    #Plotting BE_wave
+    def plot_BE_wave(fig_num,BE_wave, BE_band, w_vec_full, SS_step_t):
         fh = plt.figure(fig_num)
 
         sph1a = plt.subplot(3, 2, 1)
@@ -130,23 +127,66 @@ class BEWaveform:
         sph1b.tick_params(axis='both', which='both', labelsize=7)
         plt.plot(w_vec_full, np.abs(BE_band))
 
+    #Plotting SS_wave
     def plot_SS_wave(fig_num, SS_wave, AO_rate, SS_read_vec, SS_write_vec):
         fh = plt.figure(fig_num)
         t_vec = np.arange(len(SS_wave)) / AO_rate
        
-        plt.plot(t_vec, SS_wave)
+        plt.plot(t_vec, SS_wave) #plotting the SS_wave lines
 
-        #ph1 = plt.plot(t_vec[SS_read_vec], SS_wave[SS_read_vec], 'ro')
-        #ph2 = plt.plot(t_vec[SS_write_vec], SS_wave[SS_write_vec], 'go')
         ph1 = plt.plot(t_vec[np.array(SS_read_vec, dtype=int)], SS_wave[np.array(SS_read_vec, dtype=int)], 'ro')
-        ph2 = plt.plot(t_vec[np.array(SS_write_vec, dtype=int)], SS_wave[np.array(SS_write_vec, dtype=int)], 'go')
         plt.setp(ph1, markersize=1.5, markerfacecolor=[1, 0, 0])
+        
+        ph2 = plt.plot(t_vec[np.array(SS_write_vec, dtype=int)], SS_wave[np.array(SS_write_vec, dtype=int)], 'go')
         plt.setp(ph2, markersize=1.5, markerfacecolor=[0, 1, 0])
-        fh.set_facecolor([1, 1, 1]) 
-        #plt.xlim([0,1])   
+        
+        fh.set_facecolor([1, 1, 1])   
         plt.title("SS_wave")
+        
+    #Plotting merge BE and SS wave
+    def plot_BEPS_wave(fig_num, BEPS_wave, AO_rate, SS_read_vec, SS_write_vec):
+        fh = plt.figure(fig_num)
+        t_vec = np.arange(0, len(BEPS_wave)) / AO_rate
+  
+        sph1 = plt.subplot(2, 2, 1)
+        plt.plot(t_vec, BEPS_wave)
 
-    def build_SS(self, chirp_direction = 0, **kwargs):
+        ph1 = plt.plot(t_vec[np.array(SS_read_vec, dtype=int)], BEPS_wave[np.array(SS_read_vec, dtype=int)], 'ro')
+        ph2 = plt.plot(t_vec[np.array(SS_write_vec, dtype=int)], BEPS_wave[np.array(SS_write_vec, dtype=int)], 'go')
+        
+        sph1.tick_params(axis='both', which='both', labelsize=7)
+
+        for line in ph1:
+            line.set_markersize(1.5)
+            line.set_markerfacecolor('r')
+        for line in ph2:
+            line.set_markersize(1.5)
+            line.set_markerfacecolor('g')
+            
+        sph2 = plt.subplot(2, 2, 2)
+        plt.plot(t_vec, BEPS_wave)
+        
+        plt.axis('tight')
+        ph1 = plt.plot(t_vec[SS_read_vec.astype(int)], BEPS_wave[SS_read_vec.astype(int)], 'ro')
+        ph2 = plt.plot(t_vec[SS_write_vec.astype(int)], BEPS_wave[SS_write_vec.astype(int)], 'go')
+        
+        sph2.tick_params(axis='both', which='both', labelsize=7)
+        
+        for line in ph1:
+            line.set_markersize(1.5)
+            line.set_markerfacecolor('r')
+        for line in ph2:
+            line.set_markersize(1.5)
+            line.set_markerfacecolor('g')
+        max_t = max(t_vec)
+        if not np.isfinite(max_t):
+            max_t = 1.0  # Set a default value for NaN or Inf
+            
+        plt.axis([0, max_t / 20, -1.0, 1.0])  # Adj
+        plt.setp(fh, 'facecolor', [1, 1, 1])
+        plt.show()
+
+    def build_SS(self,**kwargs):
         BE_ppw = 2**self.BE_parms_1["BE_ppw"]
 
         n_read_final = BE_ppw  # points per read step actual
@@ -184,7 +224,8 @@ class BEWaveform:
             dc_amp_vec_1 = np.arange(self.SS_parm_vec["SS_max_offset_amp"] / ( self.SS_parm_vec["SS_steps_per_cycle"] / 4),self.SS_parm_vec["SS_max_offset_amp"] + 1e-10,
                                     self.SS_parm_vec["SS_max_offset_amp"] / ( self.SS_parm_vec["SS_steps_per_cycle"] / 4))  # vector of offset values for first quarter wave
             dc_amp_vec_2 = np.arange( self.SS_parm_vec["SS_max_offset_amp"]  - self.SS_parm_vec["SS_max_offset_amp"] /( self.SS_parm_vec["SS_steps_per_cycle"]/4), 
-                                     - self.SS_parm_vec["SS_max_offset_amp"] /( self.SS_parm_vec["SS_steps_per_cycle"]/4), - self.SS_parm_vec["SS_max_offset_amp"] /( self.SS_parm_vec["SS_steps_per_cycle"]/4)) # vector of offset values for second quarter wave
+                                     - self.SS_parm_vec["SS_max_offset_amp"] /( self.SS_parm_vec["SS_steps_per_cycle"]/4),
+                                     - self.SS_parm_vec["SS_max_offset_amp"] /( self.SS_parm_vec["SS_steps_per_cycle"]/4)) # vector of offset values for second quarter wave
             dc_amp_vec_3 = -dc_amp_vec_1
             dc_amp_vec_4 = -dc_amp_vec_2
             dc_amp_vec_1 = dc_amp_vec_1 - self.SS_parm_vec["SS_read_voltage"]
@@ -193,7 +234,6 @@ class BEWaveform:
             dc_amp_vec_4 = dc_amp_vec_4 - self.SS_parm_vec["SS_read_voltage"]
 
             plt.figure(55)
-            plt.clf()
             plt.plot(dc_amp_vec_1, 'b.-')
             plt.plot(dc_amp_vec_2, 'r.-')
             plt.plot(dc_amp_vec_3, 'k.-')
@@ -276,8 +316,8 @@ class BEWaveform:
             SS_wave[SS_wave_nan] = 0
             SS_parm_out = np.arange(2, 12)
 
-            
         return SS_wave,SS_read_vec,SS_write_vec,SS_parm_out
+    
     def merge_BE_SS(self,BE_wave_1,BE_wave_2,SS_wave,SS_read_vec,SS_write_vec):
    
         if self.assembly_parm_vec['num_band_ring'] == 0:  # excite one band
@@ -295,14 +335,7 @@ class BEWaveform:
             BEPS_wave_dc = SS_wave
             BEPS_wave_ac = np.zeros_like(SS_wave)
             BEPS_wave[:n_step] += BE_wave
-            '''
-            for step_count in range(len(SS_read_vec)):
-            print(step_count)
-            BEPS_wave[int(SS_read_vec[step_count]):int(SS_read_vec[step_count])+n_step-1] += BE_wave
-            print(BEPS_wave)
-            BEPS_wave_ac[int(SS_read_vec[step_count]):int(SS_read_vec[step_count])+n_step-1] = BE_wave
-            print(BEPS_wave,'ac')
-            '''
+ 
             for step_count in range(len(SS_read_vec)):
                 start_idx = int(SS_read_vec[step_count])
                 end_idx = int(SS_read_vec[step_count]) + n_step - 1
@@ -310,11 +343,6 @@ class BEWaveform:
                 BEPS_wave_ac[start_idx:end_idx] = BE_wave[:n_step-1]
                 
             if self.assembly_parm_vec['meas_high_ring'] == 1:
-                '''
-                for step_count in range(len(SS_write_vec)):
-                BEPS_wave[SS_write_vec[step_count]:SS_write_vec[step_count]+n_step-1] += BE_wave
-                BEPS_wave_ac[SS_write_vec[step_count]:SS_write_vec[step_count]+n_step-1] = BE_wave
-                '''
                 for step_count in range(len(SS_write_vec)):
                     start_idx = int(SS_write_vec[step_count])
                     end_idx = int(SS_write_vec[step_count]) + n_step - 1
@@ -355,7 +383,7 @@ class BEWaveform:
         F2_BE_wave_1 = np.fft.fftshift(np.fft.fft(BE_wave_1**2))
         F2_BE_wave_1 = F2_BE_wave_1[len(F2_BE_wave_1)//2:]
         if plot_cond_vec== 1:
-            BEWaveform.plot_BE_wave(1,BE_wave_1, BE_band_1, w_ind_band_1, w_vec_full, SS_step_t)
+            BEWaveform.plot_BE_wave(1,BE_wave_1, BE_band_1, w_vec_full, SS_step_t)
 
         if num_band_ring == 1:
             BE_wave_2, BE_band_2 = BEWaveform.build_BE(self,self.BE_parms_2)
@@ -363,16 +391,20 @@ class BEWaveform:
             F_BE_wave_2 = np.fft.fftshift(np.fft.fft(BE_wave_2))
             F_BE_wave_2 = F_BE_wave_2[:len(F_BE_wave_2)//2]
             if plot_cond_vec == 1:
-                BEWaveform.plot_BE_wave(2, BE_wave_2, BE_band_2, w_ind_band_2, w_vec_full, SS_step_t)
+                BEWaveform.plot_BE_wave(2, BE_wave_2, BE_band_2, w_vec_full, SS_step_t)
         
         # Build SS waveform
         SS_wave,SS_read_vec,SS_write_vec,SS_parm_out = BEWaveform.build_SS(self)
         #if 0:
         if plot_cond_vec== 1:
             BEWaveform.plot_SS_wave(3,SS_wave,AO_rate,SS_read_vec,SS_write_vec)
-        print("loop back mm")
-                
-        
+        BEPS_wave, BEPS_wave_ac, BEPS_wave_dc = BEWaveform.merge_BE_SS( self,BE_wave_1, BE_wave_2, SS_wave, SS_read_vec, SS_write_vec)
+        #BEPS_wave = single(BEPS_wave);
+        if plot_cond_vec == 1:
+            BEWaveform.plot_BEPS_wave(4, BEPS_wave, AO_rate, SS_read_vec, SS_write_vec)
+        return BEPS_wave, SS_parm_out, SS_read_vec, SS_write_vec
+                    
+            
 
 
                     
