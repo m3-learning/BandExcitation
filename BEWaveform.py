@@ -150,6 +150,7 @@ class BEWaveform:
   
         sph1 = plt.subplot(2, 2, 1)
         plt.plot(t_vec, BEPS_wave)
+        plt.xlim([0.4,0.5])
 
         ph1 = plt.plot(t_vec[np.array(SS_read_vec, dtype=int)], BEPS_wave[np.array(SS_read_vec, dtype=int)], 'ro')
         ph2 = plt.plot(t_vec[np.array(SS_write_vec, dtype=int)], BEPS_wave[np.array(SS_write_vec, dtype=int)], 'go')
