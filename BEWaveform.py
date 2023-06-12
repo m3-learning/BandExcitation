@@ -25,13 +25,6 @@ class BEWaveform:
             AO_rate = av_vec[np.argmin(abs(av_vec - AO_rate_req))]
             SS_step_t = BE_ppw / AO_rate
 
-        # # coerce IO rate to acceptable value for PXI-6115
-        # if DAQ_platform_cond == 1:
-        #     AO_rate_req = BE_ppw / function_generator_freq  # requested frequency of the function generator
-        #     av_vec = 20E6 / np.arange(1, 1001)  # vector of acceptable rates
-        #     AO_rate = av_vec[np.argmin(abs(av_vec - AO_rate_req))]
-        #     SS_step_t = BE_ppw / AO_rate
-
         return AO_rate, SS_step_t
     
     def build_BE(self, BE_parms,chirp_direction = 0, **kwargs):
@@ -74,9 +67,6 @@ class BEWaveform:
             bin_ind_1 = round(2**(N-1) + w1 / f_resolution)
             bin_ind_2 = round(2**(N-1) + w2 / f_resolution)
             bin_ind = np.arange(bin_ind_1, bin_ind_2 + 1)
-           
-            #points_per_band = bw * t_max
-            #f_rate = bw / t_max
 
             x1 = np.arange(0, 1, 1 / (len(bin_ind) - 1))
 
@@ -95,7 +85,7 @@ class BEWaveform:
             Y_chirp = Ya * np.exp(1j * Yp_chirp)
 
             A = np.real(np.fft.ifft(np.fft.fftshift(Y)))
-            A = np.roll(A, round((2**N) * (1 -BE_parms["BE_phase_var"]) / 2))
+            A = np.roll(A, round((2**N) * (1 - BE_parms["BE_phase_var"]) / 2))
 
             B = np.real(np.fft.ifft(np.fft.fftshift(Y_chirp)))
 
@@ -108,9 +98,6 @@ class BEWaveform:
 
             BE_wave = A / max(A)
             BE_band = np.fft.fftshift(np.fft.fft(A))
-
-            BE_wave_chirp = B / max(B)
-            BE_band_chirp = np.fft.fftshift(np.fft.fft(B))
             
         # Return the results (modify accordingly)
         return BE_wave, BE_band
@@ -146,10 +133,10 @@ class BEWaveform:
     #Plotting merge BE and SS wave
     def plot_BEPS_wave(fig_num, BEPS_wave, AO_rate, SS_read_vec, SS_write_vec):
         fh = plt.figure(fig_num)
-        t_vec = np.arange(0, len(BEPS_wave)) / AO_rate
+        t_vec = np.arange(len(BEPS_wave)) / AO_rate
   
         sph1 = plt.subplot(2, 2, 1)
-        plt.plot(t_vec, BEPS_wave)
+        plt.plot(t_vec, BEPS_wave) 
         plt.xlim([0.4,0.5])
 
         ph1 = plt.plot(t_vec[np.array(SS_read_vec, dtype=int)], BEPS_wave[np.array(SS_read_vec, dtype=int)], 'ro')
@@ -167,7 +154,6 @@ class BEWaveform:
         sph2 = plt.subplot(2, 2, 2)
         plt.plot(t_vec, BEPS_wave)
         
-        plt.axis('tight')
         ph1 = plt.plot(t_vec[SS_read_vec.astype(int)], BEPS_wave[SS_read_vec.astype(int)], 'ro')
         ph2 = plt.plot(t_vec[SS_write_vec.astype(int)], BEPS_wave[SS_write_vec.astype(int)], 'go')
         
@@ -195,13 +181,12 @@ class BEWaveform:
             if self.assembly_parm_vec["par_ser_ring"] == 1:  # excite them in series
                 n_read_final = 2 * BE_ppw  # then double the width
         AO_rate, SS_step_t = self.determine_AO_rate(BE_ppw)
-        AO_length = AO_rate * SS_step_t
+        #AO_length = AO_rate * SS_step_t
 
         n_read = 256  # points per read reduced in order to speed up calculation
 
         SS_smooth = AO_rate * self.SS_parm_vec["SS_smoothing"]  # smoothing factor
         n_trans = round(SS_smooth * 5)
-        # read_delay = 3; %ensures that the reading starts(stops) after(before) smoothing
 
         n_pfm = n_read_final  # AO_rate*SS_step_t*2;
         n_setpulse = AO_rate * self.SS_parm_vec["SS_set_pulse_t"]
@@ -211,10 +196,9 @@ class BEWaveform:
         if self.assembly_parm_vec["meas_high_ring"] == 1:
             n_write = n_read
         
-
         if self.SS_parm_vec["SS_mode_ring"] == "standard_spectrum":
 
-            n_write = n_write + n_trans
+            n_write += n_trans
             n_cycle = (n_read + n_trans + n_write) * self.SS_parm_vec["SS_steps_per_cycle"]  # points per cycle
             interp_factor = n_read_final / n_read
 
@@ -368,13 +352,6 @@ class BEWaveform:
         AO_length = AO_rate * SS_step_t
 
         w_vec_full = np.arange(-AO_rate/2, AO_rate/2 + AO_rate/(AO_length-1) , AO_rate/(AO_length-1))
-        w1_1 = self.BE_parms_1["BE_w_center"] - self.BE_parms_1["BE_w_width"]/2
-        w2_1 = self.BE_parms_1["BE_w_center"] + self.BE_parms_1["BE_w_width"]/2
-        w1_2 = self.BE_parms_2["BE_w_center"] - self.BE_parms_2["BE_w_width"]/2
-        w2_2 = self.BE_parms_2["BE_w_center"] + self.BE_parms_2["BE_w_width"]/2
-        w_ind_band_1 = np.where((w_vec_full >= w1_1) & (w_vec_full <= w2_1))[0]
-        w_ind_band_2 = np.where((w_vec_full >= w1_2) & (w_vec_full <= w2_2))[0]
-
 
         BE_wave_1, BE_band_1 = BEWaveform.build_BE(self,self.BE_parms_1)
         
