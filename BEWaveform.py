@@ -188,6 +188,7 @@ class BE_Spectroscopy(BEWaveform):
         BE_smoothing=125,
         BE_phase_var=None,
         chirp_direction="up",
+        
     ) -> None:
         
         super().__init__(
@@ -207,11 +208,77 @@ class BE_Spectroscopy(BEWaveform):
         self.build_spectroscopy_waveform = self.build_spectroscopy_waveform()
         
     def build_spectroscopy_waveform(self):
+        SS_max_offset_amp = 10
         
         if self.spectroscopic_waveform == "Bipolar":
+            n_pfm = 2*self.BE_ppw
+            n_read = 256
+            SS_smooth = (self.BE_ppw / self.waveform_time) * 2E-6
+            n_trans = round(SS_smooth * 5)
+            n_write = n_read + n_trans
+            n_cycle = (n_read + n_trans + n_write) * 64
+            interp_factor = n_pfm / n_read
+            n_step = n_write + n_trans + n_read
+            n_write_vec = np.arange(n_read, n_cycle // 4, n_step)
+            n_read_vec = n_write_vec + n_write
+            step_size = SS_max_offset_amp / 16
+            
+            dc_amp_vec_1 = np.arange(step_size, SS_max_offset_amp + 1e-10, step_size)
+            dc_amp_vec_2 = np.arange(SS_max_offset_amp- step_size, -step_size,-step_size) 
+            
+            y_positive,y_negative = np.zeros(n_cycle // 4 - 1),np.zeros(n_cycle // 4 - 1)
+            
+            for step_count in range(16):
+                n_sub_shifted = np.arange(1, n_cycle // 4) - n_write_vec[step_count]
+                yk = 0.5 * (erf(n_sub_shifted / SS_smooth) - erf((n_sub_shifted - n_read) / SS_smooth))
+                y_positive += dc_amp_vec_1[step_count] * yk
+                y_negative += dc_amp_vec_2[step_count] * yk
+                
+            n = np.arange(n_cycle - 4)
+            SS_wave  = np.interp(np.arange(1, int(n_cycle * interp_factor) + 1) / interp_factor, n, np.concatenate((y_positive,y_negative, -y_positive, -y_negative)))
+            
+            n_write_vec_1 = np.concatenate((np.arange(n_read, n_cycle // 2, n_step),n_cycle // 2
+                    + np.arange(n_read, n_cycle // 2 - n_read - 1, -n_step),))
+            n_write_vec = np.concatenate((np.arange(n_read, n_cycle // 2, n_step),np.arange(n_read, n_cycle // 2 - n_read - 1, n_step) + n_cycle // 2))
+            print(n_write_vec.shape,n_write_vec_1.shape)
+            n_read_vec = np.concatenate(([1 / interp_factor], n_write_vec + n_write))
+            ni_read_vec = (n_read_vec * interp_factor)+ n_pfm  
+            ni_write_vec = (n_write_vec * interp_factor) + n_pfm 
+
+            SS_read_vec = np.round(ni_read_vec + np.round(n_trans * interp_factor / 2))
+            SS_write_vec = np.round(ni_write_vec + np.round(n_trans * interp_factor / 2))
+            SS_write_vec = np.concatenate((SS_write_vec, [SS_write_vec[-1] + np.round(n_step * interp_factor)]))
+            
+            n_step = len(self.BE_wave)
+            SS_wave[:n_step] += self.BE_wave
+            
+            for step_count in range(len(SS_read_vec)-2):
+                start_idx = int(SS_read_vec[step_count])
+                end_idx = start_idx + n_step - 1
+                print(start_idx,end_idx)
+                SS_wave[start_idx:end_idx] += self.BE_wave[: n_step - 1]
+            
+            for step_count in range(len(SS_write_vec)-2):
+                start_idx = int(SS_write_vec[step_count])
+                end_idx = start_idx + n_step - 1
+                SS_wave[start_idx:end_idx] += self.BE_wave[: n_step - 1]
+            
+   
+            
+            
             NotImplementedError("Bipolar spectroscopy not implemented yet")
         else:
             raise ValueError("Invalid spectroscopic waveform type")
+out = BE_Spectroscopy(14, 1, 600e3,60e3, wave= "chirp", BE_smoothing=125)
+print(out.BE_wave)
+viz = BE_Viz(out)
+
+
+ 
+
+viz.plot_fft()
+
+viz.plot_waveform()
 
 
 # class BEWaveform:
