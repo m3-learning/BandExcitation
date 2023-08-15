@@ -195,43 +195,41 @@ class Spectroscopy():
     ) -> None:
         
         super().__init__()
-        self.BE_ppw = BE_ppw
+        self.BE_ppw = 2**BE_ppw
         self.n_read = n_read
         self.SS_steps_per_cycle = SS_steps_per_cycle
         self.build_SS()
 
-
     def build_SS(self):
-        print(self.BE_ppw)
-        n_cycle = 2*self.n_read  * self.SS_steps_per_cycle
-        interp_factor = 2*self.BE_ppw / self.n_read
-        n_step = 2*self.n_read 
-        n_write_vec = np.arange(self.n_read, n_cycle // 4, n_step)
+            
+            n_cycle = (2*self.n_read)  * self.SS_steps_per_cycle
+            interp_factor = (2*self.BE_ppw )/ self.n_read
+            n_step = 2*self.n_read 
+            n_write_vec = np.arange(self.n_read, n_cycle // 4, n_step)
 
-        dc_amp_vec_1 = np.arange(0, self.SS_steps_per_cycle/4, 1)
-        dc_amp_vec_2 = np.arange(self.SS_steps_per_cycle/4, -1,-1)
-        
-        y_positive,y_negative = np.zeros(n_cycle // 4 - 1),np.zeros(n_cycle // 4 - 1)
-        
-        for step_count in range(int(self.SS_steps_per_cycle/4)):
-            n_sub_shifted = np.arange(1, n_cycle // 4) - n_write_vec[step_count]
-            yk = 0.5 * (erf(n_sub_shifted ) - erf((n_sub_shifted - self.n_read)))
-            y_positive += dc_amp_vec_1[step_count] * yk
-            y_negative += dc_amp_vec_2[step_count] * yk       
-        n = np.arange(n_cycle - 4)
-        self.SS_wave  = np.interp(np.arange(1, int(n_cycle * interp_factor) + 1) / interp_factor, n, np.concatenate((y_positive,y_negative, -y_positive, -y_negative)))
-        plt.plot(self.SS_wave)
-        plt.show()
-        # getting the points where BE will be placed
-        n_write_vec = np.concatenate((np.arange(self.n_read, n_cycle // 2, n_step),np.arange(self.n_read, n_cycle // 2 - self.n_read - 1, n_step) + n_cycle // 2))
-        n_read_vec = np.concatenate(([1 / interp_factor], n_write_vec + (self.n_read )))
-        ni_read_vec = (n_read_vec * interp_factor)  
-        ni_write_vec = (n_write_vec * interp_factor) 
+            dc_amp_vec_1 = np.arange(0, self.SS_steps_per_cycle/4, 1)
+            dc_amp_vec_2 = np.arange(self.SS_steps_per_cycle/4, -1,-1)
+            
+            y_positive,y_negative = np.zeros(n_cycle // 4 - 1),np.zeros(n_cycle // 4 - 1)
+            
+            for step_count in range(int(self.SS_steps_per_cycle/4)):
+                n_sub_shifted = np.arange(1, n_cycle // 4) - n_write_vec[step_count]
+                yk = 0.5 * (erf(n_sub_shifted ) - erf((n_sub_shifted - self.n_read)))
+                y_positive += dc_amp_vec_1[step_count] * yk
+                y_negative += dc_amp_vec_2[step_count] * yk       
+            n = np.arange(n_cycle - 4)
+            self.SS_wave  = np.interp(np.arange(1, int(n_cycle * interp_factor) + 1) / interp_factor, n, np.concatenate((y_positive,y_negative, -y_positive, -y_negative)))
 
-        self.SS_read_vec = np.round(ni_read_vec + np.round(interp_factor / 2))
-        SS_write_vec = np.round(ni_write_vec + np.round( interp_factor / 2))
-        self.SS_write_vec = np.concatenate((SS_write_vec, [SS_write_vec[-1] + np.round(n_step * interp_factor)]))
-        
+            # getting the points where BE will be placed
+            n_write_vec = np.concatenate((np.arange(self.n_read, n_cycle // 2, n_step),np.arange(self.n_read, n_cycle // 2 - self.n_read - 1, n_step) + n_cycle // 2))
+            n_read_vec = np.concatenate(([1 / interp_factor], n_write_vec + (self.n_read )))
+            ni_read_vec = ((self.SS_steps_per_cycle*100)+n_read_vec * interp_factor)  
+            ni_write_vec = ((self.SS_steps_per_cycle*100)+n_write_vec * interp_factor) 
+
+            self.SS_read_vec = np.round(ni_read_vec + np.round(interp_factor / 2))
+            SS_write_vec = np.round(ni_write_vec + np.round( interp_factor / 2))
+            self.SS_write_vec = np.concatenate((SS_write_vec, [SS_write_vec[-1] + np.round(n_step * interp_factor)]))
+            
 class BE_Spectroscopy(BEWaveform,Spectroscopy):
 
     def __init__(
@@ -244,7 +242,6 @@ class BE_Spectroscopy(BEWaveform,Spectroscopy):
         spectroscopic_waveform = "Bipolar",
         platform="PXI-5412",
         waveform_time=4e-3,
-        AWG_Freq=0.01,
         BE_smoothing=125,
         BE_phase_var=None,
         chirp_direction="up",
@@ -263,8 +260,8 @@ class BE_Spectroscopy(BEWaveform,Spectroscopy):
                     BE_phase_var,
                     chirp_direction,
                     )
-        
         self.spectroscopic_waveform = spectroscopic_waveform
+        Spectroscopy.__init__(self, BE_ppw)
         self.build_spectroscopy_waveform = self.build_spectroscopy_waveform()
         
     def build_spectroscopy_waveform(self):
@@ -272,21 +269,26 @@ class BE_Spectroscopy(BEWaveform,Spectroscopy):
             # merging BE and SS waveforms
             n_step = len(self.BE_wave)
             self.SS_wave[:n_step] += self.BE_wave
-            
             for step_count in range(len(self.SS_read_vec)):
-                start_idx = int(self.SS_read_vec[step_count]) +10000
+                start_idx = int(self.SS_read_vec[step_count]) 
                 end_idx = start_idx + n_step - 1
                 self.SS_wave[start_idx:end_idx] += self.BE_wave[: n_step - 1]
             
             for step_count in range(len(self.SS_write_vec)):
-                start_idx = int(self.SS_write_vec[step_count]) + 10000
+                start_idx = int(self.SS_write_vec[step_count]) 
                 end_idx = start_idx + n_step - 1
                 self.SS_wave[start_idx:end_idx] += self.BE_wave[: n_step - 1]
         else:
             raise ValueError("Invalid spectroscopic waveform type")
         return(self.SS_wave)
 
+out = BE_Spectroscopy(14, 1, 600e3,60e3, wave= "chirp", BE_smoothing=125)
+viz = BE_Viz(out)
 
+viz.plot_fft()
+
+viz.plot_waveform()
+viz.plot_merged_waveform()
 # class BEWaveform:
 #     def __init__(
 #         self,
