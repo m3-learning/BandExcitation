@@ -86,10 +86,10 @@ class BEWaveform(AWG):
         envelope = envelope_a - envelope_b  # erf window
         self.BE_wave = envelope * np.sin(2 * np.pi * t_vector * w_chirp)
 
-        if ~isinstance(self.BE_rep, int):
-            ValueError("BE_rep must be an integer")
+        if not isinstance(self.BE_rep, int):
+            raise ValueError("BE_rep must be an integer")
         elif self.BE_rep > 1:
-            self.BE_wave = np.repeat(self.BE_wave, self.BE_rep)
+            self.BE_wave = np.tile(self.BE_wave, self.BE_rep)
         elif self.BE_rep == 1:
             self.BE_wave = self.BE_wave
         else:
@@ -346,8 +346,7 @@ class BE_Spectroscopy(BEWaveform,Spectroscopy):
         result = []
         for i, item in enumerate(arr):
             result.append(item)
-            if i % 2 == 1:
-                result.append(constant)
+            result.append(constant)
         return result
     
     def merge_low_and_high_freq(self, DC_wave, AC_wave):
@@ -361,6 +360,21 @@ class BE_Spectroscopy(BEWaveform,Spectroscopy):
             result[start_idx:end_idx] = AC_wave + offset
             
         self.cantilever_excitation_waveform = result
+    
+    @property
+    def cantilever_excitation_waveform(self):
+        return self._cantilever_excitation_waveform
+    
+    @property
+    def cantilever_excitation_length(self):
+        return self._cantilever_excitation_length
+        
+    @cantilever_excitation_waveform.setter
+    def cantilever_excitation_waveform(self, value):
+        self._cantilever_excitation_waveform = value
+        self._cantilever_excitation_length = len(value)
+    
+    
         
             
     def build_spectroscopy_waveform(self):
