@@ -282,13 +282,7 @@ class BE_Spectroscopy(BEWaveform,Spectroscopy):
             raise ValueError("Invalid spectroscopic waveform type")
         return(self.SS_wave)
 
-out = BE_Spectroscopy(14, 1, 600e3,60e3, wave= "chirp", BE_smoothing=125)
-viz = BE_Viz(out)
 
-viz.plot_fft()
-
-viz.plot_waveform()
-viz.plot_merged_waveform()
 # class BEWaveform:
 #     def __init__(
 #         self,
