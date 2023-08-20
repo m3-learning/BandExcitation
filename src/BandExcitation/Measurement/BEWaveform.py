@@ -20,9 +20,7 @@ class BEWaveform():
         chirp_direction="up",
         delay = (0,0),
     ) -> None:
-        
-        # TODO finish added delay to BE Wave
-        
+                
         self.BE_rep = BE_rep
         self.center_freq = center_freq
         self.bandwidth = bandwidth
@@ -41,11 +39,15 @@ class BEWaveform():
         freq2 = self.center_freq + self.bandwidth / 2
 
         if self.wave == "chirp":
-            return self.chirp(freq1, freq2)
+            wave = self.chirp(freq1, freq2)
         elif self.wave == "sinc":
-            return self.sinc(freq1, freq2)
+            wave = self.sinc(freq1, freq2)
         else:
             raise ValueError("Invalid waveform type")
+        
+        # adds the delay to the waveform if required
+        if self.delay != (0,0):
+            wave = np.concatenate((np.zeros(int(self.delay[0]*self.AO_rate)),wave,np.zeros(int(self.delay[1]*self.AO_rate))))
 
     def chirp(self, freq1, freq2):
         t_vector = np.linspace(0, self.waveform_time, self.BE_ppw)
