@@ -1,11 +1,13 @@
 import numpy as np
 from scipy.special import erf
 import matplotlib.pyplot as plt
-import warnings
-from . import AWG
 from ..Util.core import add_kwargs, inherit_attributes
 
 class BEWaveform():
+    """
+    BEWaveform Object for the BEWaveform
+    """
+    
     def __init__(
         self,
         BE_ppw,
@@ -19,8 +21,25 @@ class BEWaveform():
         BE_phase_var=None,
         chirp_direction="up",
         delay = (0,0),
-    ) -> None:
-                
+    ):
+        """
+        __init__ Initialization function
+
+        Args:
+            BE_ppw (int): Points per BE wave
+            BE_rep (int): Number of repetitions per BE wave 
+            BE_amplitude (int, optional): Amplitude of the BE Wave. Defaults to 1.
+            center_freq (int, optional): Center resonance frequency of the BE wave. Defaults to 500e3.
+            bandwidth (int, optional): Bandwidth of the BE wave. Defaults to 60e3.
+            wave (str, optional): Type of the BE Wave. Defaults to "chirp".
+            waveform_time (float, optional): time of the BE wave in seconds. Defaults to 4e-3.
+            BE_smoothing (int, optional): Factor that smooths the BE band. Defaults to 125.
+            BE_phase_var (float, optional): phase shift applied to the BE wave in radians. Defaults to None.
+            chirp_direction (str, optional): sets the direction of the chirp excitation. Defaults to "up".
+            delay (tuple, optional): delay added before or after the BE wave. Defaults to (0,0).
+        """
+        
+        # initializations 
         self.BE_rep = BE_rep
         self.center_freq = center_freq
         self.bandwidth = bandwidth
@@ -32,9 +51,18 @@ class BEWaveform():
         self.delay = delay
         self.AO_rate = self.BE_ppw / (self.waveform_time + np.sum(self.delay))
         self.BE_amplitude = BE_amplitude
+        
+        # builds ths BE wave
         self.build_BE()
 
     def build_BE(self):
+        """
+        build_BE function that builds the BE wave
+
+        Raises:
+            ValueError: error if the type of wave is not in the available types
+        """
+        
         freq1 = self.center_freq - self.bandwidth / 2
         freq2 = self.center_freq + self.bandwidth / 2
 
@@ -50,6 +78,22 @@ class BEWaveform():
             wave = np.concatenate((np.zeros(int(self.delay[0]*self.AO_rate)),wave,np.zeros(int(self.delay[1]*self.AO_rate))))
 
     def chirp(self, freq1, freq2):
+        """
+        chirp function to create a BE chirp
+
+        Args:
+            freq1 (int): lower bound frequency of the BE chirp
+            freq2 (int): upper bound frequency of the BE chirp
+
+        Raises:
+            ValueError: BE repetitions must be an integer
+            ValueError: BE repetitions must be greater than 0
+            ValueError: Invalid chirp direction
+
+        Returns:
+            np.array: BE waveform as an array
+        """
+        
         t_vector = np.linspace(0, self.waveform_time, self.BE_ppw)
         m = ((freq2 - freq1) / self.waveform_time) / 2  # slope of frequency change
         w_chirp = m * t_vector + freq1  # vector for linear frequency change with time
@@ -87,6 +131,14 @@ class BEWaveform():
         return self.BE_wave
 
     def sinc(self, freq1, freq2):
+        
+        """
+         Sinc function to create a BE sinc
+
+        Raises:
+            NotImplementedError: Currently not implemented
+        """
+        
         raise NotImplementedError("Sinc waveform not implemented yet")
 
     @property
@@ -106,6 +158,14 @@ class BEWaveform():
         self._waveform_time = value
 
 def phase_shift_waveform(waveform, shift_radians):
+    
+    """
+    phase_shift_waveform function that shifts the phase of a waveform
+
+    Returns:
+        np.array : waveform shifter by the phase shift
+    """
+    
     # get length of waveform
     n = len(waveform)
     
