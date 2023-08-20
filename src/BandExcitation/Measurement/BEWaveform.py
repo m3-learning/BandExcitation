@@ -2,48 +2,24 @@ import numpy as np
 from scipy.special import erf
 import matplotlib.pyplot as plt
 import warnings
+from . import AWG
+from ..Util.core import add_kwargs, inherit_attributes
 
-
-class AWG:
-    def __init__(self, platform="PXI-5413") -> None:
-        self.platform = platform
-
-
-# class DAQ:
-#     def __init__(self, platform="PXI-5412", AO_rates=None) -> None:
-#         # sets the DAQ platform
-#         self.platform = platform
-#         self.AWG_Freq = AWG_Freq
-
-#     def set_AO_rate(self, BE_ppw):
-#         AO_rate_req = (
-#             BE_ppw / self.AWG_Freq
-#         )  # requested frequency of the function generator
-#         self.AO_rate = self.AO_rates[np.argmin(abs(self.AO_rates - AO_rate_req))]
-#         self.BE_step_t = BE_ppw / self.AO_rate
-#         self.w_vec = np.arange(
-#             -self.AO_rate / 2,
-#             self.AO_rate / 2 + self.AO_rate / (BE_ppw - 1),
-#             self.AO_rate / (BE_ppw - 1),
-#         )
-
-
-class BEWaveform(AWG):
+class BEWaveform():
     def __init__(
         self,
         BE_ppw,
         BE_rep,
+        BE_amplitude=1,
         center_freq=500e3,
         bandwidth=60e3,
         wave="chirp",
-        platform="PXI-5412",
         waveform_time=4e-3,
         BE_smoothing=125,
         BE_phase_var=None,
         chirp_direction="up",
     ) -> None:
-        super().__init__(platform=platform)
-
+        
         self.BE_ppw = 2**BE_ppw  # number of points per waveform in orders of 2
         self.BE_rep = BE_rep
         self.center_freq = center_freq
@@ -54,6 +30,7 @@ class BEWaveform(AWG):
         self.BE_phase_var = BE_phase_var
         self.waveform_time = waveform_time
         self.AO_rate = self.BE_ppw / self.waveform_time
+        self.BE_amplitude = BE_amplitude
         self.build_BE()
 
     def build_BE(self):
@@ -84,7 +61,7 @@ class BEWaveform(AWG):
             )
         ) / 2  # second half of erf window
         envelope = envelope_a - envelope_b  # erf window
-        self.BE_wave = envelope * np.sin(2 * np.pi * t_vector * w_chirp)
+        self.BE_wave = self.BE_amplitude*envelope * np.sin(2 * np.pi * t_vector * w_chirp)
 
         if not isinstance(self.BE_rep, int):
             raise ValueError("BE_rep must be an integer")
@@ -123,84 +100,6 @@ class BEWaveform(AWG):
     def waveform_time(self, value):
         self._waveform_time = value
 
-
-class BE_Viz:
-    def __init__(self, BE_waveform):
-        for key, value in BE_waveform.__dict__.items():
-            setattr(self, key, value)
-            
-    def plot_fft(self, signal=None, x_range = None, AI_rate = None, y_range = None):
-        """
-        Compute and plot the FFT magnitude of a signal.
-
-        Parameters:
-        - signal: Time-domain signal
-        - fs: sampling frequency (Hz)
-        """
-
-        if signal is None:
-            signal = self.BE_wave
-
-        if AI_rate is None:
-            rate = self.AO_rate
-        else:
-            rate = AI_rate
-
-        N = len(signal)
-
-        # Compute the FFT
-        freqs = np.fft.fftfreq(N, 1/rate)
-        fft_vals = np.fft.fft(signal)
-
-        # Shift the FFT values so that the center frequency is at 0 Hz
-        freqs = np.fft.fftshift(freqs)
-        fft_magnitude = np.fft.fftshift(np.abs(fft_vals))
-        
-        plt.figure(figsize=(10, 6))
-        plt.plot(freqs, fft_magnitude)
-        plt.title("Magnitude Spectrum")
-        plt.xlabel("Frequency (Hz)")
-        plt.ylabel("Magnitude")
-        if x_range is not None:
-                    plt.xlim(x_range)
-        if y_range is not None:
-            plt.ylim(0, y_range)
-        plt.show()
-
-    def plot_waveform(self, signal=None):
-        if signal is None:
-            signal = self.BE_wave
-
-        plt.figure(figsize=(10, 6))
-        plt.plot(signal)
-        plt.title("BE Waveform")
-        plt.xlabel("Time (s)")
-        plt.ylabel("Amplitude")
-        plt.grid(True)
-        plt.show()
-
-    def plot_merged_waveform(self, signal=None):
-        if signal is None:
-            signal = self.SS_wave
-
-        plt.figure(figsize=(10, 6))
-        plt.plot(signal)
-        plt.title("BE Merged_Waveform")
-        plt.xlabel("Time (s)")
-        plt.ylabel("Amplitude")
-        plt.grid(True)
-        plt.show()
-
-def add_kwargs(obj, check = True, **kwargs):
-    for key, value in kwargs.items():
-        if not hasattr(obj, key) and check == True:
-            warnings.warn(f"Attribute '{key}' does not exist in the object. Setting it now.")
-        setattr(obj, key, value)
-        
-def inherit_attributes(source_obj, target_obj):
-    for key, value in source_obj.__dict__.items():
-        setattr(target_obj, key, value)
-        
 def phase_shift_waveform(waveform, shift_radians):
     # get length of waveform
     n = len(waveform)
@@ -222,16 +121,21 @@ class Spectroscopy():
         add_kwargs(self, check=False, **kwargs)
         super().__init__()
         
-        # self.BE_ppw = 2**BE_ppw
-        # self.n_read = n_read
-        # self.SS_steps_per_cycle = SS_steps_per_cycle
-        # self.build_SS()
-        
     def build_DC_wave(self):
         if self.type == "switching spectroscopy":
             self.switching_spectroscopy()
+        if self.type == "BE Line":
+            self.BE_line()
         else:
             raise ValueError("Invalid spectroscopy type")
+        
+    def BE_line(self, **kwargs):
+        
+        add_kwargs(self, **kwargs)
+        
+        # creates the waveform by replicating the start value.
+        self.DC_waveform = [self.start] * self.points_per_cycle
+        
 
     def switching_spectroscopy(self, **kwargs):
         
@@ -263,35 +167,6 @@ class Spectroscopy():
 
         # Repeat the cycle for cycles
         self.DC_waveform = np.tile(y_cycle, self.cycles)
-
-            
-            # n_cycle = (2*self.n_read)  * self.SS_steps_per_cycle
-            # interp_factor = (2*self.BE_ppw )/ self.n_read
-            # n_step = 2*self.n_read 
-            # n_write_vec = np.arange(self.n_read, n_cycle // 4, n_step)
-
-            # dc_amp_vec_1 = np.arange(0, self.SS_steps_per_cycle/4, 1)
-            # dc_amp_vec_2 = np.arange(self.SS_steps_per_cycle/4, -1,-1)
-            
-            # y_positive,y_negative = np.zeros(n_cycle // 4 - 1),np.zeros(n_cycle // 4 - 1)
-            
-            # for step_count in range(int(self.SS_steps_per_cycle/4)):
-            #     n_sub_shifted = np.arange(1, n_cycle // 4) - n_write_vec[step_count]
-            #     yk = 0.5 * (erf(n_sub_shifted ) - erf((n_sub_shifted - self.n_read)))
-            #     y_positive += dc_amp_vec_1[step_count] * yk
-            #     y_negative += dc_amp_vec_2[step_count] * yk       
-            # n = np.arange(n_cycle - 4)
-            # self.SS_wave  = np.interp(np.arange(1, int(n_cycle * interp_factor) + 1) / interp_factor, n, np.concatenate((y_positive,y_negative, -y_positive, -y_negative)))
-
-            # # getting the points where BE will be placed
-            # n_write_vec = np.concatenate((np.arange(self.n_read, n_cycle // 2, n_step),np.arange(self.n_read, n_cycle // 2 - self.n_read - 1, n_step) + n_cycle // 2))
-            # n_read_vec = np.concatenate(([1 / interp_factor], n_write_vec + (self.n_read )))
-            # ni_read_vec = ((self.SS_steps_per_cycle*100)+n_read_vec * interp_factor)  
-            # ni_write_vec = ((self.SS_steps_per_cycle*100)+n_write_vec * interp_factor) 
-
-            # self.SS_read_vec = np.round(ni_read_vec + np.round(interp_factor / 2))
-            # SS_write_vec = np.round(ni_write_vec + np.round( interp_factor / 2))
-            # self.SS_write_vec = np.concatenate((SS_write_vec, [SS_write_vec[-1] + np.round(n_step * interp_factor)]))
             
 class BE_Spectroscopy(BEWaveform,Spectroscopy):
 
