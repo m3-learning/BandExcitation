@@ -183,10 +183,21 @@ class Spectroscopy():
         **kwargs
     ) -> None:
         
+        """
+         Class that builds a Band Excitation Spectroscopy waveform
+        """
+        
         add_kwargs(self, check=False, **kwargs)
         super().__init__()
         
     def build_DC_wave(self):
+        """
+        build_DC_wave Builds the DC waveform for the spectroscopy
+
+        Raises:
+            ValueError: Invalid spectroscopy type
+        """
+        
         if self.type == "switching spectroscopy":
             self.switching_spectroscopy()
         if self.type == "BE Line":
@@ -196,6 +207,10 @@ class Spectroscopy():
         
     def BE_line(self, **kwargs):
         
+        """
+         Function that builds the DC waveform for a BE line
+        """
+        
         add_kwargs(self, **kwargs)
         
         # creates the waveform by replicating the start value.
@@ -203,6 +218,22 @@ class Spectroscopy():
         
 
     def switching_spectroscopy(self, **kwargs):
+        
+        """
+         Function that builds a bipolar triangle waveform for a switching spectroscopy
+         
+         .. math::
+            f(x) =
+            \\begin{cases} 
+                \\text{{self.start}} + x & \\text{{if }} 0 \leq x < \\text{{length\_up}} \\\\
+                \\text{{self.max}} - (x - \\text{{length\_up}}) & \\text{{if }} \\text{{length\_up}} \leq x < \\text{{length\_up}} + \\text{{length\_down}} \\\\
+                \\text{{self.min}} + (x - \\text{{length\_up}} - \\text{{length\_down}}) & \\text{{if }} \\text{{length\_up}} + \\text{{length\_down}} \leq x < \\text{{length\_up}} + \\text{{length\_down}} + \\text{{length\_return}} \\\\
+                f(x \\mod (\\text{{length\_up}} + \\text{{length\_down}} + \\text{{length\_return}})) & \\text{{otherwise}}
+            \\end{cases}
+
+        Returns:
+            np.array: waveform as an np array
+        """
         
         add_kwargs(self, **kwargs)
         
@@ -234,6 +265,10 @@ class Spectroscopy():
         self.DC_waveform = np.tile(y_cycle, self.cycles)
             
 class BE_Spectroscopy(BEWaveform,Spectroscopy):
+    
+    """
+     Function that build the entire BE spectroscopy waveform
+    """
 
     def __init__(
         self,
@@ -256,8 +291,9 @@ class BE_Spectroscopy(BEWaveform,Spectroscopy):
         chirp_direction="up",
         measurement_state = "on and off", 
         measurement_state_offset = 0,
-        
-    ) -> None:
+        **kwargs):        
+
+           
         
         super().__init__(
                     BE_ppw,
