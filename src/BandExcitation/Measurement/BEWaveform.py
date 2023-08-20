@@ -18,9 +18,11 @@ class BEWaveform():
         BE_smoothing=125,
         BE_phase_var=None,
         chirp_direction="up",
+        delay = (0,0),
     ) -> None:
         
-        self.BE_ppw = 2**BE_ppw  # number of points per waveform in orders of 2
+        # TODO finish added delay to BE Wave
+        
         self.BE_rep = BE_rep
         self.center_freq = center_freq
         self.bandwidth = bandwidth
@@ -29,7 +31,8 @@ class BEWaveform():
         self.chirp_direction = chirp_direction
         self.BE_phase_var = BE_phase_var
         self.waveform_time = waveform_time
-        self.AO_rate = self.BE_ppw / self.waveform_time
+        self.delay = delay
+        self.AO_rate = self.BE_ppw / (self.waveform_time + np.sum(self.delay))
         self.BE_amplitude = BE_amplitude
         self.build_BE()
 
