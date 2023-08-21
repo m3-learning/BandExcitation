@@ -1,4 +1,6 @@
 import warnings
+import time
+
 
 def add_kwargs(obj, check = True, **kwargs):
     for key, value in kwargs.items():
@@ -9,4 +11,3 @@ def add_kwargs(obj, check = True, **kwargs):
 def inherit_attributes(source_obj, target_obj):
     for key, value in source_obj.__dict__.items():
         setattr(target_obj, key, value)
-        

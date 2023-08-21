@@ -6,3 +6,4 @@ nifgen
 
 niscope
 
+func_timeout

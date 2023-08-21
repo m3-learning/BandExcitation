@@ -425,3 +425,7 @@ class BE_Spectroscopy(BEWaveform, Spectroscopy):
     def cantilever_excitation_waveform(self, value):
         self._cantilever_excitation_waveform = value
         self._cantilever_excitation_length = len(value)
+        
+    @property
+    def cantilever_excitation_length(self):
+        return self._cantilever_excitation_length
