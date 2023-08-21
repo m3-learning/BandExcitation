@@ -31,4 +31,14 @@ sys.path.insert(0, os.path.abspath('../src/BandExcitation/'))
 
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
-extensions = ['sphinx.ext.todo', 'sphinx.ext.viewcode', 'sphinx.ext.autodoc']
+extensions = ['sphinx.ext.todo', 'sphinx.ext.viewcode', 'sphinx.ext.autodoc', 'sphinx.ext.napoleon', 'sphinx.ext.mathjax', 'sphinx.ext.githubpages']
+
+## Makes sure to include the __init__ docstring
+
+def skip(app, what, name, obj, would_skip, options):
+    if name == "__init__":
+        return False
+    return would_skip
+
+def setup(app):
+    app.connect("autodoc-skip-member", skip)

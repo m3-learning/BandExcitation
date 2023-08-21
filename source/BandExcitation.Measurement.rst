@@ -11,6 +11,7 @@ BandExcitation.Measurement.BEWaveform module
    :members:
    :undoc-members:
    :show-inheritance:
+   
 
 BandExcitation.Measurement.NI module
 ------------------------------------
