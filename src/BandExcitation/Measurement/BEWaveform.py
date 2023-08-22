@@ -19,7 +19,6 @@ class BEWaveform:
         wave="chirp",
         waveform_time=4e-3,
         BE_smoothing=125,
-        BE_phase_var=None,
         chirp_direction="up",
         delay=(0, 0),
     ):
@@ -40,6 +39,7 @@ class BEWaveform:
         """
 
         # initializations
+        self.BE_ppw = BE_ppw
         self.BE_rep = BE_rep
         self.center_freq = center_freq
         self.bandwidth = bandwidth
@@ -146,7 +146,6 @@ class BEWaveform:
         """
 
         raise NotImplementedError("Sinc waveform not implemented yet")
-
     @property
     def BE_ppw(self):
         return self._BE_ppw
@@ -203,7 +202,7 @@ class Spectroscopy:
 
         if self.type == "switching spectroscopy":
             self.switching_spectroscopy()
-        if self.type == "BE Line":
+        elif self.type == "BE Line":
             self.BE_line()
         else:
             raise ValueError("Invalid spectroscopy type")
@@ -287,6 +286,7 @@ class BE_Spectroscopy(BEWaveform, Spectroscopy):
         self,
         BE_ppw,
         BE_rep,
+        BE_amplitude = 1,
         type="switching spectroscopy",
         start=None,
         max=None,
@@ -311,6 +311,7 @@ class BE_Spectroscopy(BEWaveform, Spectroscopy):
         Args:
             BE_ppw (int): points per wave
             BE_rep (int): repetitions of the BE wave
+            BE_amplitude (int): amplitude of the BE wave
             type (str, optional): type of DC waveform. Defaults to "switching spectroscopy".
             start (float, optional): starting voltage. Defaults to None.
             max (float, optional): maximum voltage. Defaults to None.
@@ -332,13 +333,13 @@ class BE_Spectroscopy(BEWaveform, Spectroscopy):
         super().__init__(
             BE_ppw,
             BE_rep,
-            center_freq,
-            bandwidth,
-            wave,
-            platform,
-            waveform_time,
-            BE_smoothing,
-            chirp_direction,
+            BE_amplitude,
+            center_freq=center_freq,
+            bandwidth=bandwidth,
+            wave = wave,
+            waveform_time = waveform_time,
+            BE_smoothing=BE_smoothing,
+            chirp_direction=chirp_direction,
         )
 
         self.measurement_state = measurement_state
@@ -425,7 +426,12 @@ class BE_Spectroscopy(BEWaveform, Spectroscopy):
     def cantilever_excitation_waveform(self, value):
         self._cantilever_excitation_waveform = value
         self._cantilever_excitation_length = len(value)
+
         
     @property
     def cantilever_excitation_length(self):
         return self._cantilever_excitation_length
+    
+    @property
+    def cantilever_excitation_time(self):
+        return self.cantilever_excitation_length/self.AO_rate

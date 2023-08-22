@@ -30,17 +30,16 @@ class FunctionGenerator(nifgen.Session):
             platform (str, optional): platform of the waveform generator. Defaults to "PXI-5413".
             trigger_channel (str, optional): Channel where the trigger exists. Defaults to "PXI_Trig0".
         """
-
         super().__init__(resource_name=resource_name, **kwargs)
 
         self.BEwave = BEwave
         self.platform = platform
         self.trigger_channel = trigger_channel
-
-        # makes sure the session is aborted from previous runs
-        self.abort()
         self.channel_num = channel
 
+        # makes sure the session is aborted from previous runs
+        self.reset()
+        
         # sets the output mode of the function generator
         self.output_mode = nifgen.OutputMode.ARB
 
@@ -58,6 +57,9 @@ class FunctionGenerator(nifgen.Session):
 
         # constructs the waveform on the generator
         self.construct_arb_waveform()
+
+    def __setattr__(self, name, value): 
+        object.__setattr__(self, name, value)
 
     def __call__(self, timeout=30):
         # initiates the function generator
@@ -77,17 +79,17 @@ class FunctionGenerator(nifgen.Session):
         construct_arb_waveform constructs the waveform on the function generator
         """
 
-        # gets the excitation from the BEWave object
+        # gets the excitation from the BEwave object
         excitation = self.BEwave.cantilever_excitation_waveform
 
         self.scale_wave(excitation)
 
-        waveform = excitation / self.gain
+        self.waveform = excitation / self.gain
 
-        self.arb_waveform_handle = self.create_waveform(waveform_data_array=waveform)
+        self.arb_waveform_handle = self.create_waveform(waveform_data_array=self.waveform)
 
         self.channels[self.channel_num].configure_arb_waveform(
-            waveform_handle=self.arb_waveform_handle, gain=self.gain
+            waveform_handle=self.arb_waveform_handle, gain=self.gain/2, offset=0,
         )
 
     def scale_wave(self, wave):
@@ -113,9 +115,9 @@ class Oscilloscope(niscope.Session):
         BEwave,
         resource_name,
         channel_num=0,
-        vertical_range=1,
+        vertical_range=12,
         AWG_channel_num=None,
-        AWG_vertical_range=10,
+        AWG_vertical_range=12,
         trigger_channel="PXI_Trig0",
         sample_rate=1e6,
         number_of_points=15000000,
@@ -151,6 +153,9 @@ class Oscilloscope(niscope.Session):
                 enforce_realtime,
                 trigger_channel,
             )
+
+        self.config_scope(self.cantilever_response_channel)
+        self.initiate()
 
     class Channel:
         def __init__(
@@ -196,11 +201,28 @@ class Oscilloscope(niscope.Session):
             enforce_realtime=channel.enforce_realtime,
         )
 
-        self.initiate()
+       
+
+    def __setattr__(self, name, value): 
+        object.__setattr__(self, name, value)
         
     def __call__(self):
-        wfm = self.channels[self.cantilever_response_channel.channel_num].fetch(num_samples=int(self.BEwave.cantilever_excitation_length*self.cantilever_response_channel.sample_rate))
+        
+        wfm = self.channels[self.cantilever_response_channel.channel_num].fetch(num_samples=int(self.BEwave.cantilever_excitation_time*self.cantilever_response_channel.sample_rate))
         wfm = list(wfm[0].samples)
         
+        
         self.abort()
+        return wfm
+    
+
+class PXI:
+
+    def __init__(self, function_generator, oscilloscope) -> None:
+        self.function_generator = function_generator
+        self.oscilloscope = oscilloscope
+
+    def __call__(self):
+        self.function_generator()
+        wfm = self.oscilloscope()
         return wfm
