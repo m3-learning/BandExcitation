@@ -2,7 +2,7 @@
 *~
 *.py[cod]
 *.so
-*.cfg
+# *.cfg
 !.isort.cfg
 !setup.cfg
 *.orig
@@ -57,3 +57,4 @@ MANIFEST
 *.h5
 
 old/*
+testing/*
