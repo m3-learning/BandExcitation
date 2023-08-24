@@ -1,24 +1,21 @@
-from setuptools import setup, find_packages
-import os
+"""
+    Setup file for BandExcitation.
+    Use setup.cfg to configure your project.
 
-# with open("src/requirements.txt") as f:
-#     requirements = f.read().splitlines()
+    This file was generated with PyScaffold 4.5.
+    PyScaffold helps you to put up the scaffold of your new Python project.
+    Learn more under: https://pyscaffold.org/
+"""
+from setuptools import setup
 
-setup(
-    name="BandExcitation",
-    version="0.0.1",
-    packages=find_packages(where="src"),
-    url="https://github.com/m3-learning/BandExcitation",
-    # install_requires=requirements,
-    license=" BSD-3-Clause",
-    author="Joshua C. Agar",
-    author_email="jca92@drexel.edu",
-    description="Python Script for Band Excitation Piezoresponse Force Microscopy",
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: BSD License",
-        "Operating System :: OS Independent",
-    ],
-    package_dir={"": "src"},
-    python_requires=">=3.6",
-)
+if __name__ == "__main__":
+    try:
+        setup(use_scm_version={"version_scheme": "no-guess-dev"})
+    except:  # noqa
+        print(
+            "\n\nAn error occurred while building the project, "
+            "please ensure you have the most updated version of setuptools, "
+            "setuptools_scm and wheel with:\n"
+            "   pip install -U setuptools setuptools_scm wheel\n\n"
+        )
+        raise

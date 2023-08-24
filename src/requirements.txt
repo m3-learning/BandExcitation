@@ -1,9 +1,0 @@
-numpy
-scipy
-matplotlib
-
-nifgen
-
-niscope
-
-func_timeout
