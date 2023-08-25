@@ -297,7 +297,6 @@ class BE_Spectroscopy(BEWaveform, Spectroscopy):
         center_freq=500e3,
         bandwidth=60e3,
         wave="chirp",
-        platform="PXI-5412",
         waveform_time=4e-3,
         BE_smoothing=125,
         chirp_direction="up",
@@ -322,7 +321,6 @@ class BE_Spectroscopy(BEWaveform, Spectroscopy):
             center_freq (float, optional): center drive frequency of the cantilever. Defaults to 500e3.
             bandwidth (float, optional): bandwidth of the BE excitation. Defaults to 60e3.
             wave (str, optional): type of BE wave. Defaults to "chirp".
-            platform (str, optional): PXI-waveform generator platform. Defaults to "PXI-5412".
             waveform_time (float, optional): time for the BE wave. Defaults to 4e-3.
             BE_smoothing (float, optional): Smoothing factor applied to smooth the BE band. Defaults to 125.
             chirp_direction (str, optional): direction of the chirp wave. Defaults to "up".
@@ -435,3 +433,7 @@ class BE_Spectroscopy(BEWaveform, Spectroscopy):
     @property
     def cantilever_excitation_time(self):
         return self.cantilever_excitation_length/self.AO_rate
+    
+    @property
+    def max_voltage(self):
+        return np.abs(self.DC_wave).max()
