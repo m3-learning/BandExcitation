@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from bandexcitation.Measurement.BEWaveform import BE_Spectroscopy
 from bandexcitation.Hardware import AO
+from bandexcitation.Measurement.NI import FunctionGenerator, Oscilloscope, PXI
 
 @dataclass
 class BEparams:
@@ -24,19 +25,63 @@ class BEparams:
     spectroscopic_phase_shift: float = 0
     spectroscopic_measurement_state: str = "on and off"
     AO_platform: str = "PXI-5412"
-    AO_ext_amp: float = 0
+    AO_ext_amp: float = 1
+    AO_trigger_channel: str = "PXI_Trig0"
+    AO_channel: int = 0
+    AO_resource_name = "Dev1"
     AI_platform: str = "PXI-6115"
+    AI_photodiode_channel_num: int = 0
+    AI_photodiode_vertical_range: float = 12
+    AI_AWG_channel_num: int = None
+    AI_AWG_vertical_range: float = 12
+    AI_trigger_channel: str = "PXI_Trig0"
+    AI_sample_rate: float = 1e6
+    AI_number_of_points: int = 15000000
+    AI_ref_position: int = 0
+    AI_num_records: int = 1
+    AI_enforce_realtime: bool = True
+    AI_resource_name: str = "PXI1Slot3_2"
     
     def __post_init__(self):
         print("Initializing BEparams")
-        self.update_be_spectroscopy()
+        self.system_initialization()
         self.system_checks()
+        
+    def system_initialization(self):
+        self.update_be_spectroscopy()
+        self.update_PXI()
+        
+    def update_PXI(self):
+        self.update_function_generator()
+        self.update_oscilloscope()
+        self.PXI = PXI(self.function_generator, self.oscilloscope)
+        
+    def update_function_generator(self):
+        self.function_generator = FunctionGenerator(BEwave=self.be_spectroscopy, 
+                                                    resource_name = self.AO_resource_name, 
+                                                    channel = self.AO_channel,
+                                                    platform = self.AO_platform, 
+                                                     trigger_channel = self.AO_trigger_channel)
+        
+    def update_oscilloscope(self):
+        self.oscilloscope = Oscilloscope(  BEwave=self.be_spectroscopy,
+                                            resource_name =self.AI_resource_name,
+                                            channel_num = self.AI_photodiode_channel_num,
+                                            vertical_range = self.AI_photodiode_vertical_range,
+                                            AWG_channel_num = self.AI_AWG_channel_num,
+                                            AWG_vertical_range = self.AI_AWG_vertical_range,
+                                            trigger_channel = self.AI_trigger_channel,
+                                            sample_rate = self.AI_sample_rate,
+                                            number_of_points = self.AI_number_of_points,
+                                            ref_position = self.AI_ref_position,
+                                            num_records = self.AI_num_records,
+                                            enforce_realtime = self.AI_enforce_realtime)
 
     def update(self, **kwargs):
         for key, value in kwargs.items():
             if hasattr(self, key):
                 setattr(self, key, value)
-                # TODO add logic for determing what updates to call
+                self.update_PXI()
     
     def update_be_spectroscopy(self):
 
@@ -60,7 +105,8 @@ class BEparams:
                         measurement_state=self.spectroscopic_measurement_state,
                         measurement_state_offset=self.spectroscopic_offset,
                         )
-        
+
+    #TODO
     def system_checks(self):
         pass
 
