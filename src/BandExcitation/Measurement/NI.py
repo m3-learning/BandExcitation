@@ -69,7 +69,7 @@ class FunctionGenerator(nifgen.Session):
     BEwave: object
     resource_name: str
     channel: int = 0
-    platform: str = "PXI-5413"
+    platform: str = "PXI-5412"
     trigger_channel: str = "PXI_Trig0"
 
     def __post_init__(self):
@@ -80,7 +80,7 @@ class FunctionGenerator(nifgen.Session):
             BEwave (obj): BE wave object
             resource_name (string): location with the NI card is located
             channel (int, optional): output channel for the waveform. Defaults to 0.
-            platform (str, optional): platform of the waveform generator. Defaults to "PXI-5413".
+            platform (str, optional): platform of the waveform generator. Defaults to "PXI-5412".
             trigger_channel (str, optional): Channel where the trigger exists. Defaults to "PXI_Trig0".
         """
         super().__init__(resource_name=self.resource_name)

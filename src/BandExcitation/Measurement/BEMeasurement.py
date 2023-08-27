@@ -4,13 +4,13 @@ from bandexcitation.Hardware import AO
 from bandexcitation.Measurement.NI import FunctionGenerator, Oscilloscope, PXI
 
 @dataclass
-class BEparams:
-    BE_time: float = 4e-3
+class BEMeasurement:
+    BE_time: float = 1e-3
     BE_ampl: float = 1
     BE_smoothing: float = 125
     BE_bandwidth: float = 60e3
     BE_center_freq: float = 500e3
-    BE_ppw: int = 2**8
+    BE_ppw: int = 2**12
     BE_rep: int = 1
     BE_wave_type: str = 'chirp'
     BE_delay: tuple[float, float] = (0, 0)
@@ -62,6 +62,10 @@ class BEparams:
                                                     channel = self.AO_channel,
                                                     platform = self.AO_platform, 
                                                      trigger_channel = self.AO_trigger_channel)
+    
+    @property
+    def AO_sample_rate(self):
+        return self.be_spectroscopy.AO_rate    
         
     def update_oscilloscope(self):
         self.oscilloscope = Oscilloscope(  BEwave=self.be_spectroscopy,
@@ -108,7 +112,7 @@ class BEparams:
 
     #TODO
     def system_checks(self):
-        pass
+        self.AO_check()
 
     def AO_check(self):
         if self.AO_platform == "PXI-5412":
@@ -116,6 +120,10 @@ class BEparams:
                 #TODO add a better fix for the high voltage amplifier
                 raise ValueError(f"Max voltage of {self.be_spectroscopy.max_voltage} too high for PXI-5412 with a \
                     max range of {AO.pxi_5412.max_voltage*self.AO_ext_amp}, consider adding a high voltage amplifier to the AO channel")
+
+        if self.AO_sample_rate < self.BE_center_freq*2:
+            raise ValueError(f"Sample rate of {self.AO_sample_rate} is too low for the center frequency of {self.BE_center_freq}, \
+                based on the nyquest frequency, consider increasing the sample rate. This can be achieved by increasing the number of points per waveform")
 
     def AI_check(self):
         pass
