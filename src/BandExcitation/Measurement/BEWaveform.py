@@ -82,6 +82,8 @@ class BEWaveform:
                 )
             )
 
+        self.BE_wave = wave
+
     def chirp(self, freq1, freq2):
         """
         chirp function to create a BE chirp
