@@ -72,7 +72,10 @@ class BEMeasurement:
 
     @property
     def BE_freq_range(self):
-        return (self.BE_center_freq - self.BE_bandwidth/2, self.BE_center_freq + self.BE_bandwidth/2) 
+        return (self.BE_center_freq - self.BE_bandwidth/2, self.BE_center_freq + self.BE_bandwidth/2)
+    
+    def BE_graph_range(self, multiple):
+        return (self.BE_center_freq - self.BE_bandwidth/2*multiple, self.BE_center_freq + self.BE_bandwidth/2*multiple)
         
     def update_oscilloscope(self):
         self.oscilloscope = Oscilloscope(  BEwave=self.be_spectroscopy,
@@ -98,7 +101,7 @@ class BEMeasurement:
 
         self.be_spectroscopy = BE_Spectroscopy(
                         self.BE_ppw, 
-                        self.BE_ampl,
+                        self.BE_rep,
                         type=self.spectroscopy_type,
                         start=self.spectroscopic_start_voltage,
                         max=self.spectroscopic_max_voltage,

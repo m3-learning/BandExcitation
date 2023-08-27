@@ -82,7 +82,7 @@ class BEWaveform:
                 )
             )
 
-        self.BE_wave = wave
+        # self.BE_wave = wave
 
     def chirp(self, freq1, freq2):
         """

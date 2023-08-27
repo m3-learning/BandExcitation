@@ -1,4 +1,4 @@
-
+import numpy as np
 
 # Use the PyUSID format to write data to a .h5 file
 
@@ -29,9 +29,9 @@ class DataConverter:
         
         if self.be_measurement.BE_num_bins is not None:
             # get the masked regions
-            self.inds = self.extract_freq_range(freqs, self.be_measurement.BE_freq_range, multiple)
+            self.inds = self.extract_freq_range(freqs, self.be_measurement., multiple)
             # Verify if number of bins is too large
-            if num_bins > len(frq_filtered):
+            if self.be_measurement.BE_num_bins > len(self.inds):
                 raise ValueError("Number of bins is greater than the number of FFT points within the frequency range.")
         else:
             self.inds = np.where(freqs>=0)
