@@ -146,6 +146,7 @@ class BEWaveform:
         """
 
         raise NotImplementedError("Sinc waveform not implemented yet")
+    
     @property
     def BE_ppw(self):
         return self._BE_ppw

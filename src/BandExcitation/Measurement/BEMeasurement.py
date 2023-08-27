@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from bandexcitation.Measurement.BEWaveform import BE_Spectroscopy
+from bandexcitation.Measurement.BEWaveform import BE_Spectroscopy, BEWaveform
 from bandexcitation.Hardware import AO
 from bandexcitation.Measurement.NI import FunctionGenerator, Oscilloscope, PXI
+import numpy as np
 
 @dataclass
 class BEMeasurement:
@@ -15,6 +16,7 @@ class BEMeasurement:
     BE_wave_type: str = 'chirp'
     BE_delay: tuple[float, float] = (0, 0)
     BE_chirp_direction: str = 'up'
+    BE_num_bins: any = None 
     spectroscopy_type: str = "switching spectroscopy"
     spectroscopic_start_voltage: float = 0
     spectroscopic_min_voltage: float = -10
@@ -41,6 +43,7 @@ class BEMeasurement:
     AI_num_records: int = 1
     AI_enforce_realtime: bool = True
     AI_resource_name: str = "PXI1Slot3_2"
+
     
     def __post_init__(self):
         print("Initializing BEparams")
@@ -65,7 +68,11 @@ class BEMeasurement:
     
     @property
     def AO_sample_rate(self):
-        return self.be_spectroscopy.AO_rate    
+        return self.be_spectroscopy.AO_rate
+
+    @property
+    def BE_freq_range(self):
+        return (self.BE_center_freq - self.BE_bandwidth/2, self.BE_center_freq + self.BE_bandwidth/2) 
         
     def update_oscilloscope(self):
         self.oscilloscope = Oscilloscope(  BEwave=self.be_spectroscopy,
@@ -109,7 +116,25 @@ class BEMeasurement:
                         measurement_state=self.spectroscopic_measurement_state,
                         measurement_state_offset=self.spectroscopic_offset,
                         )
+        
+    def get_simulated_BE_measurement(self):
+        """ Builds a waveform that is the BE waveform based on the AI sampling rate
+        """
+        self.AI_BE_ppw = int(self.AI_sample_rate * (self.BE_time + np.sum(self.BE_delay)))
 
+        self.BE_AI_sim = BEWaveform(
+            self.AI_BE_ppw,
+            self.BE_rep,
+            self.BE_ampl,
+            center_freq=self.BE_center_freq,
+            bandwidth=self.BE_bandwidth,
+            wave = self.BE_wave_type,
+            waveform_time = self.BE_time,
+            BE_smoothing=self.BE_smoothing,
+            chirp_direction=self.BE_chirp_direction,
+        )
+
+        return self.BE_AI_sim.BE_wave
     #TODO
     def system_checks(self):
         self.AO_check()
