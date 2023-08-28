@@ -12,6 +12,42 @@ class DataConverter:
         # this calls all the subfunctions to get the spectroscopic dimension
         pass
 
+    def get_spectroscopic_freq(self):
+        self.update_binning(self.be_measurement.get_simulated_BE_measurement())
+        return np.tile(self.binned_freqs,self.be_measurement.BE_num_bins*self.be_measurement.spectroscopic_points)
+
+    @staticmethod
+    def tile_and_offset(a, b):
+        """
+        Tile vector `a` at each index specified by values in vector `b`.
+        The length of the resulting array will be len(a) * len(b).
+
+        Parameters:
+        - a (numpy.ndarray): Vector to be tiled.
+        - b (numpy.ndarray): Vector specifying the offsets.
+
+        Returns:
+        - numpy.ndarray: The resulting tiled and offset array.
+        """
+        
+        # Step 1 & 2: Tile 'a' len(b) times
+        tiled_a = np.tile(a, len(b))
+
+        # Step 3: Reshape to a 2D array with each row being a tiled 'a'
+        reshaped_a = tiled_a.reshape(len(b), len(a))
+
+        # Step 4: Create an array by repeating each element in 'b', len(a) times
+        repeated_b = np.repeat(b, len(a)).reshape(len(b), len(a))
+
+        # Step 5: Add the reshaped_a and repeated_b
+        result_2D = reshaped_a + repeated_b
+
+        # Step 6: Flatten the resulting 2D array
+        result = result_2D.flatten()
+        
+        return result
+
+
     def update_binning(self, signal, **kwargs):
 
         N = len(signal)
@@ -81,12 +117,6 @@ class DataConverter:
         ave_signal = np.add.reduceat(signal, idx[:-1]) / np.diff(idx)
     
         return ave_signal
-        
-        # # Reshape and average
-        # reshaped_signal = signal.reshape(num_bins, -1)
-        # avg_signal = np.mean(reshaped_signal, axis=1)
-        
-        # return avg_signal
 
     @staticmethod
     def BE_frequencies(number_of_points, sampling_frequency):
@@ -103,14 +133,6 @@ class DataConverter:
         FFT_ = np.fft.fftshift(FFT_) # Shift FFT and keep one side
         return FFT_
     
-    
-
-    # def BE_freq_bins(self, **kwargs):
-    #     BE_wave = self.be_measurement.get_simulated_BE_measurement()
-    #     freqs = np.fft.fftfreq(len(BE_wave), 1/self.be_measurement.AI_sample_rate)
-    #     self.ind = self.extract_freq_range(freqs, **kwargs)
-    #     self.freqs = freqs[self.ind]
-
     @staticmethod
     def extract_freq_range(freqs, _range, num_bins):
 
@@ -144,4 +166,48 @@ class DataConverter:
         self._binned_freqs = value
     
 
-    
+    # def get_noise_floor(fft_data, tolerance):
+    #     """
+    #     Calculate the noise floor from the FFT data. Algorithm originally written by Mahmut Okatan Baris
+
+    #     Parameters
+    #     ----------
+    #     fft_data : 1D or 2D complex numpy array
+    #         Signal in frequency space (ie - after FFT shifting) arranged as (channel or repetition, signal)
+    #     tolerance : unsigned float
+    #         Tolerance to noise. A smaller value gets rid of more noise.
+            
+    #     Returns
+    #     -------
+    #     noise_floor : 1D array-like
+    #         One value per channel / repetition
+
+    #     """
+
+    #     fft_data = np.atleast_2d(fft_data)
+    #     # Noise calculated on the second axis
+
+    #     noise_floor = []
+
+    #     fft_data = np.abs(fft_data)
+    #     num_pts = fft_data.shape[1]
+
+    #     for amp in fft_data:
+
+    #         prev_val = np.sqrt(np.sum(amp ** 2) / (2 * num_pts))
+    #         threshold = np.sqrt((2 * prev_val ** 2) * (-np.log(tolerance)))
+
+    #         residual = 1
+    #         iterations = 1
+
+    #         while (residual > 10 ** -2) and iterations < 50:
+    #             amp[amp > threshold] = 0
+    #             new_val = np.sqrt(np.sum(amp ** 2) / (2 * num_pts))
+    #             residual = np.abs(new_val - prev_val)
+    #             threshold = np.sqrt((2 * new_val ** 2) * (-np.log(tolerance)))
+    #             prev_val = new_val
+    #             iterations += 1
+
+    #         noise_floor.append(threshold)
+
+    #     return noise_floor
