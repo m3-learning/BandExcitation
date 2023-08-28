@@ -1,13 +1,5 @@
-import numpy as np
-
-# Use the PyUSID format to write data to a .h5 file
-
-## get the spectroscopic index and values from Yael. X and Y positions
-## get all the required attributes from the BE_measurement as a dictionary
-## get the BE voltage and spectroscopic values
-
-
 from dataclasses import dataclass 
+import numpy as np
 
 @dataclass
 class DataConverter:
@@ -20,7 +12,7 @@ class DataConverter:
         # this calls all the subfunctions to get the spectroscopic dimension
         pass
 
-    def update_binning(self, signal, multiple=1.05, **kwargs):
+    def update_binning(self, signal, **kwargs):
 
         N = len(signal)
         
@@ -29,7 +21,7 @@ class DataConverter:
         
         if self.be_measurement.BE_num_bins is not None:
             # get the masked regions
-            self.inds = self.extract_freq_range(freqs, self.be_measurement., multiple)
+            self.inds = self.extract_freq_range(freqs, self.be_measurement.BE_freq_range, self.be_measurement.BE_num_bins)
             # Verify if number of bins is too large
             if self.be_measurement.BE_num_bins > len(self.inds):
                 raise ValueError("Number of bins is greater than the number of FFT points within the frequency range.")
@@ -52,21 +44,49 @@ class DataConverter:
         # Filter the FFT
         FFT_filtered = FFT_[self.inds]
         
-        binned_complex = self.BE_bin_complex(FFT_filtered, self.be_measurement.BE_num_bins)
+        binned_complex = self.BE_bin(FFT_filtered, self.be_measurement.BE_num_bins)
 
         return binned_complex
        
     @staticmethod
     def BE_bin(signal, num_bins):
+
+        """
+        Downsample a 1D array signal to num_bins, including endpoints.
+
+        Parameters:
+            signal (array-like): The input 1D signal
+            num_bins (int): The number of bins to downsample to
         
-        # Perform the binning
-        bin_size = len(signal) // num_bins
+        Returns:
+            np.ndarray: The downsampled signal
+        """
+        # Validate inputs
+        if num_bins <= 0:
+            raise ValueError("The number of bins must be greater than 0.")
+        if len(signal) < num_bins:
+            raise ValueError("The number of bins must be less than or equal to the length of the signal.")
+
+        len_signal = len(signal)
+        bin_size = len_signal / num_bins
         
-        # Reshape and average
-        reshaped_signal = signal[:num_bins * bin_size].reshape(num_bins, -1)
-        avg_signal = np.mean(reshaped_signal, axis=1)
+        # Generate index array for bin edges
+        idx = np.linspace(0, len_signal, num_bins + 1)
         
-        return avg_signal
+        # Truncate index array to integers and ensure last index is exactly len(signal)
+        idx = np.floor(idx).astype(int)
+        idx[-1] = len_signal
+        
+        # Compute means using NumPy's advanced indexing and diff to find bin sizes
+        ave_signal = np.add.reduceat(signal, idx[:-1]) / np.diff(idx)
+    
+        return ave_signal
+        
+        # # Reshape and average
+        # reshaped_signal = signal.reshape(num_bins, -1)
+        # avg_signal = np.mean(reshaped_signal, axis=1)
+        
+        # return avg_signal
 
     @staticmethod
     def BE_frequencies(number_of_points, sampling_frequency):
@@ -80,7 +100,7 @@ class DataConverter:
     def BE_FFT(signal):
         
         FFT_ = np.fft.fft(signal) / len(signal)  # FFT and normalization
-        FFT_ = np.fft.fftshift(Y) # Shift FFT and keep one side
+        FFT_ = np.fft.fftshift(FFT_) # Shift FFT and keep one side
         return FFT_
     
     
@@ -92,8 +112,10 @@ class DataConverter:
     #     self.freqs = freqs[self.ind]
 
     @staticmethod
-    def extract_freq_range(freqs, _range, multiple = 1.05):
-        range_ = _range*multiple
+    def extract_freq_range(freqs, _range, num_bins):
+
+        range_ = (_range[0], _range[1])
+        print(range_)
         indices = np.where((freqs >= range_[0]) & (freqs <= range_[1]))[0]
         return indices
         
