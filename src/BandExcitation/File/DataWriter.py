@@ -9,12 +9,33 @@ class DataConverter:
         pass
     
     def get_spectroscopic_dimension(self):
-        # this calls all the subfunctions to get the spectroscopic dimension
+        frequency = self.get_spectroscopic_freq()
+        DC_field = self.get_DC_field()
+        Voltage_state = self.get_measurement_voltage_state()
         pass
 
     def get_spectroscopic_freq(self):
         self.update_binning(self.be_measurement.get_simulated_BE_measurement())
         return np.tile(self.binned_freqs,self.be_measurement.BE_num_bins*self.be_measurement.spectroscopic_points)
+
+    def get_DC_field(self):
+        if self.be_measurement.spectroscopic_measurement_state == "on and off":
+            multiple = 2
+        else: multiple = 1
+
+        return self.tile_and_offset(np.zeros(self.be_measurement.BE_num_bins*multiple),
+                                    self.be_measurement.be_spectroscopy.DC_waveform)
+
+    def get_measurement_voltage_state(self):
+        if self.be_measurement.spectroscopic_measurement_state == "on and off":
+            vec = np.array([1,0])
+        elif self.be_measurement.spectroscopic_measurement_state == "on":
+            vec = np.array([1])
+        elif self.be_measurement.spectroscopic_measurement_state == "off":
+            vec = np.array([0])
+        vec_binned = self.tile_and_offset(np.zeros(self.be_measurement.BE_num_bins), vec)
+        return(self.tile_and_offset(vec_binned, np.zeros(len(self.be_measurement.be_spectroscopy.DC_waveform))))
+
 
     @staticmethod
     def tile_and_offset(a, b):
@@ -46,6 +67,12 @@ class DataConverter:
         result = result_2D.flatten()
         
         return result
+    
+    @staticmethod
+    def cycle(bandwidth):
+        half_bandwidth = int(bandwidth//2)
+        cycle = np.concatenate((np.zeros(half_bandwidth),np.ones(half_bandwidth)))
+        return cycle
 
 
     def update_binning(self, signal, **kwargs):

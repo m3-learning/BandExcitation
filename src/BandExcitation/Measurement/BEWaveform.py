@@ -82,7 +82,7 @@ class BEWaveform:
                 )
             )
 
-        # self.BE_wave = wave
+        self.BE_wave = wave
 
     def chirp(self, freq1, freq2):
         """
@@ -239,7 +239,7 @@ class Spectroscopy:
 
         add_kwargs(self, **kwargs)
 
-        n = self.points_per_cycle//2 + 1
+        n = self.points_per_cycle + 1
 
         # Lengths for each segment within the cycle
         length_up = self.max - self.start
