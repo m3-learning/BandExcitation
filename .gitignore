@@ -55,5 +55,6 @@ MANIFEST
 
 # DataFiles
 *.h5
+*.npz
 
 old/*
