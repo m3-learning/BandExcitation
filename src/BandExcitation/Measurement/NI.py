@@ -115,7 +115,7 @@ class FunctionGenerator(nifgen.Session):
     def __setattr__(self, name, value): 
         object.__setattr__(self, name, value)
 
-    def __call__(self, timeout=30):
+    def run(self, timeout=30):
         # initiates the function generator
         self.initiate()
 
@@ -123,6 +123,8 @@ class FunctionGenerator(nifgen.Session):
             func_timeout(30, self.check_status)
         except FunctionTimedOut:
             print(f"Function timed out after {30} seconds.")
+
+        self.abort()
 
     def check_status(self):
         while self.is_done() is False:
@@ -273,7 +275,6 @@ class Oscilloscope(niscope.Session):
             self.config_scope(self.excitation_channel)
 
         self.config_scope(self.cantilever_response_channel)
-        self.initiate()
 
 
     class Channel:
@@ -318,14 +319,14 @@ class Oscilloscope(niscope.Session):
             ref_position=channel.ref_position,
             num_records=channel.num_records,
             enforce_realtime=channel.enforce_realtime,
-        )
+         )
 
-       
+        
 
     def __setattr__(self, name, value): 
         object.__setattr__(self, name, value)
         
-    def __call__(self):
+    def run(self):
 
         channels_ = [self.cantilever_response_channel.channel_num]
 
@@ -335,6 +336,7 @@ class Oscilloscope(niscope.Session):
         wfm = self.channels[channels_].fetch(num_samples=int(self.BEwave.cantilever_excitation_time*self.cantilever_response_channel.sample_rate))        
         
         self.abort()
+        
         return wfm
     
 
@@ -344,7 +346,8 @@ class PXI:
         self.function_generator = function_generator
         self.oscilloscope = oscilloscope
 
-    def __call__(self):
-        self.function_generator()
-        wfm = self.oscilloscope()
+    def run(self):
+        self.oscilloscope.initiate()
+        self.function_generator.run()
+        wfm = self.oscilloscope.run()
         return wfm
