@@ -270,6 +270,7 @@ class Oscilloscope(niscope.Session):
                 self.enforce_realtime,
                 self.trigger_channel,
             )
+            self.config_scope(self.excitation_channel)
 
         self.config_scope(self.cantilever_response_channel)
         self.initiate()
@@ -325,10 +326,13 @@ class Oscilloscope(niscope.Session):
         object.__setattr__(self, name, value)
         
     def __call__(self):
-        
-        wfm = self.channels[self.cantilever_response_channel.channel_num].fetch(num_samples=int(self.BEwave.cantilever_excitation_time*self.cantilever_response_channel.sample_rate))
-        wfm = list(wfm[0].samples)
-        
+
+        channels_ = [self.cantilever_response_channel.channel_num]
+
+        if self.AWG_channel_num is not None:
+            channels_.append(self.excitation_channel.channel_num)
+    
+        wfm = self.channels[channels_].fetch(num_samples=int(self.BEwave.cantilever_excitation_time*self.cantilever_response_channel.sample_rate))        
         
         self.abort()
         return wfm
