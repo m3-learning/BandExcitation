@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from bandexcitation.Measurement.BEWaveform import BE_Spectroscopy, BEWaveform
-from bandexcitation.Hardware import AO
-from bandexcitation.Measurement.NI import FunctionGenerator, Oscilloscope, PXI
+from BandExcitation.Measurement.BEWaveform import BE_Spectroscopy, BEWaveform
+from BandExcitation.Hardware import AO
+from BandExcitation.Measurement.NI import FunctionGenerator, Oscilloscope, PXI
 import numpy as np
 
 @dataclass
@@ -42,7 +42,7 @@ class BEMeasurement:
     AI_ref_position: int = 0
     AI_num_records: int = 1
     AI_enforce_realtime: bool = True
-    AI_resource_name: str = "PXI1Slot3_2"
+    AI_resource_name: str = "PXI1Slot6"
 
     
     def __post_init__(self):

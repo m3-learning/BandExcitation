@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.special import erf
 import matplotlib.pyplot as plt
-from ..Util.Core import add_kwargs, inherit_attributes
+from BandExcitation.Util.Core import add_kwargs, inherit_attributes
 
 
 class BEWaveform:
