@@ -154,14 +154,17 @@ class DataConverter:
         return freqs
     
     @staticmethod
-    def BE_FFT(signal):
+    def BE_FFT(signal, transfer_function = None):
         
-        FFT_ = np.fft.fft(signal) / len(signal)  # FFT and normalization
+        if transfer_function is None:
+            FFT_ = np.fft.fft(signal) / len(signal)  # FFT and normalization
+        else: 
+            FFT_ = np.fft.fft(signal) / np.fft.fft(transfer_function) / len(signal)
         FFT_ = np.fft.fftshift(FFT_) # Shift FFT and keep one side
         return FFT_
     
     @staticmethod
-    def extract_freq_range(freqs, _range, num_bins):
+    def extract_freq_range(freqs, _range):
 
         range_ = (_range[0], _range[1])
         print(range_)
