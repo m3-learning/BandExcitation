@@ -250,6 +250,8 @@ class Oscilloscope(niscope.Session):
     def __post_init__(self):
         super().__init__(self.resource_name)
         
+        print(self.resource_name)
+        
         self.cantilever_response_channel = self.Channel(
             self.channel_num,
             self.vertical_range,
@@ -346,6 +348,12 @@ class PXI:
         self.function_generator = function_generator
         self.oscilloscope = oscilloscope
 
+    def initalization_and_run(self):
+        self.oscilloscope.initiate()
+        self.function_generator.run()
+        wfm = self.oscilloscope.run()
+        return wfm
+    
     def run(self):
         self.oscilloscope.initiate()
         self.function_generator.run()

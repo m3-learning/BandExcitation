@@ -84,7 +84,10 @@ class DataConverter:
         
         if self.be_measurement.BE_num_bins is not None:
             # get the masked regions
-            self.inds = self.extract_freq_range(freqs, self.be_measurement.BE_freq_range, self.be_measurement.BE_num_bins)
+            #self.inds = self.extract_freq_range(freqs, self.be_measurement.BE_freq_range, self.be_measurement.BE_num_bins)
+            self.inds = self.extract_freq_range(freqs, self.be_measurement.BE_freq_range)
+
+            
             # Verify if number of bins is too large
             if self.be_measurement.BE_num_bins > len(self.inds):
                 raise ValueError("Number of bins is greater than the number of FFT points within the frequency range.")

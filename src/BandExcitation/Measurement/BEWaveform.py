@@ -360,9 +360,16 @@ class BE_Spectroscopy(BEWaveform, Spectroscopy):
         inherit_attributes(Spectroscopy_, self)
 
         self.build_DC_wave()
-        self.build_spectroscopy_waveform()
-
-        self.merge_low_and_high_freq(self.DC_wave, self.BE_wave)
+        
+        
+        # If BE Line, set the BE_wave to the DC_waveform
+        if type == "BE Line":
+            self.cantilever_excitation_waveform = self.BE_wave
+            
+        # If switching spectroscopy, merge the DC and BE waveforms
+        else:
+            self.build_spectroscopy_waveform()
+            self.merge_low_and_high_freq(self.DC_wave, self.BE_wave)
 
     @staticmethod
     def insert_constant(arr, constant):
@@ -439,4 +446,4 @@ class BE_Spectroscopy(BEWaveform, Spectroscopy):
     
     @property
     def max_voltage(self):
-        return np.abs(self.DC_wave).max()
+        return np.abs(self.cantilever_excitation_waveform).max() #np.abs(self.DC_wave).max()
